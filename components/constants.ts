@@ -16,7 +16,7 @@ const getDevelopmentApiUrl = () => {
         // The hostname format is typically <port>-<unique-id>.googleusercontent.com
         // We need to replace the frontend port (e.g., 5173) with the backend port (3002)
         const currentHostname = window.location.hostname;
-        const backendHostname = currentHostname.replace(/^\d+/, '3002');
+        const backendHostname = currentHostname.replace(/^\d+/, '3005');
         return `${window.location.protocol}//${backendHostname}`;
     }
     

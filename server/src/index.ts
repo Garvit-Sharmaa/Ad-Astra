@@ -56,33 +56,30 @@ try {
     const dotenvResult = dotenv.config({ path: envPath });
 
     if (dotenvResult.error) {
-        throw dotenvResult.error;
+        // In production (Render), .env might not exist as we use dashboard variables. 
+        // We log a warning instead of crashing if the file is missing but variables exist.
+        if (!process.env.MONGO_URI) {
+             throw dotenvResult.error;
+        }
     }
 } catch (error) {
-    console.error("🚨 FATAL ERROR: Could not load or parse the .env file.");
-    console.error("Please ensure the '.env' file exists in the 'server/' directory and is correctly formatted.");
-    console.error("Original Error:", error);
-    process.exit(1);
+    console.log("ℹ️ .env file not found or failed to load. Assuming environment variables are set in the cloud provider.");
 }
-console.log("▶️ [2/5] .env file processed.");
+console.log("▶️ [2/5] Environment setup complete.");
 
 
 // --- PRE-FLIGHT CHECKS ---
 if (!process.env.MONGO_URI) {
-  console.error("\u{1F6AB} FATAL ERROR: MONGO_URI is not defined in the .env file. The server cannot start without a database connection string.");
+  console.error("\u{1F6AB} FATAL ERROR: MONGO_URI is not defined. The server cannot start without a database connection string.");
   process.exit(1);
 }
 if (!process.env.API_KEY) {
-  console.error("\u{1F6AB} FATAL ERROR: API_KEY is not defined in the .env file. The server cannot connect to the AI service.");
+  console.error("\u{1F6AB} FATAL ERROR: API_KEY is not defined. The server cannot connect to the AI service.");
   process.exit(1);
 }
 if (!process.env.JWT_SECRET) {
-  console.warn("\u{26A0}\u{FE0F} WARNING: JWT_SECRET is not defined in the .env file. Using a default, insecure secret. This is not safe for production.");
+  console.warn("\u{26A0}\u{FE0F} WARNING: JWT_SECRET is not defined. Using a default, insecure secret. This is not safe for production.");
 }
-if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_VERIFY_SERVICE_SID) {
-  console.warn("\u{26A0}\u{FE0F} WARNING: Twilio credentials are not fully defined in the .env file. Real SMS OTPs will not be sent. The server will run in development OTP mode.");
-}
-console.log("▶️ [3/5] Environment variables checked.");
 
 interface IHistoryPart {
   text: string;
@@ -130,59 +127,56 @@ const startServer = async () => {
         app.use(helmet() as any);
         
         const isProduction = process.env.NODE_ENV === 'production';
-        const useTwilio = isProduction || (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_VERIFY_SERVICE_SID);
         
-        // --- CORS CONFIGURATION ---
-        // In production, restrict to specific domains.
-        // In development, allow localhost and local network IPs (e.g., 192.168.x.x) for mobile testing.
-        const allowedOrigins = isProduction 
-          ? ['https://your-production-domain.com']
-          : [/http:\/\/localhost:\d+/, /http:\/\/127\.0\.0\.1:\d+/, /http:\/\/192\.168\.\d+\.\d+:\d+/, /http:\/\/10\.\d+\.\d+\.\d+:\d+/];
+        // --- TWILIO CONFIGURATION ---
+        // Only enable Real SMS if ALL keys are present. 
+        // This ensures the app defaults to "Mock OTP" (Free) mode even in production 
+        // if the user hasn't set up a paid Twilio account yet.
+        const useTwilio = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_VERIFY_SERVICE_SID);
+        
+        if (isProduction && !useTwilio) {
+            console.log("ℹ️  Running in Production but without Twilio keys. OTPs will be mocked (FREE MODE). Check server logs/console for OTPs.");
+        }
+
+        // --- CORS CONFIGURATION (SECURITY) ---
+        // 1. In Development: Allow localhost.
+        // 2. In Production (Render): Strictly allow ONLY the Vercel Frontend URL.
+        const allowedOrigins = [
+            'http://localhost:5173', 
+            'http://localhost:3000', 
+            process.env.FRONTEND_URL // You MUST set this in Render Dashboard (e.g. https://ad-astra.vercel.app)
+        ].filter(Boolean);
 
         app.use(cors({
           origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps or curl requests)
+            // Allow requests with no origin (like mobile apps or curl requests) - Optional: set to false for stricter security
             if (!origin) return callback(null, true);
             
-            if (isProduction) {
-               if ((allowedOrigins as string[]).includes(origin)) {
-                 callback(null, true);
-               } else {
-                 callback(new Error('Not allowed by CORS'));
-               }
+            if (allowedOrigins.includes(origin)) {
+              callback(null, true);
             } else {
-               // Development: Check regex patterns
-               const isAllowed = (allowedOrigins as RegExp[]).some(pattern => pattern.test(origin));
-               if (isAllowed) {
-                 callback(null, true);
-               } else {
-                 console.warn(`CORS blocked request from: ${origin}`);
-                 callback(new Error('Not allowed by CORS'));
-               }
+              console.warn(`⚠️ CORS Blocked request from unauthorized origin: ${origin}`);
+              callback(new Error('Not allowed by CORS'));
             }
           },
           credentials: true
         }) as any);
 
-        const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
-        // Fix: Explicitly cast to any to satisfy Express types which seem to be mismatching in this env
+        const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false });
         app.use('/api/', apiLimiter as any);
         
-        const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts from this IP, please try again after 15 minutes' });
-        // Fix: Explicitly cast to any
+        const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: 'Too many login attempts from this IP, please try again after 15 minutes' });
         app.use('/api/auth/', authLimiter as any);
         
-        // Fix: Explicitly cast express.json middleware
         app.use(express.json({ limit: '10mb' }) as any);
 
-        const PORT = process.env.PORT || 3004;
+        const PORT = process.env.PORT || 3005;
         const API_KEY = process.env.API_KEY!;
         const JWT_SECRET = process.env.JWT_SECRET || "a-fallback-secret-key-for-jwt";
         
         const ai = new GoogleGenAI({ apiKey: API_KEY });
         const twilioClient = useTwilio ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN) : null;
 
-        // Use 'any' for req/res to avoid type mismatches with missing properties like 'headers'
         const authMiddleware = (req: any, res: any, next: NextFunction) => {
           const authHeader = req.headers.authorization;
           if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized' });
@@ -195,6 +189,7 @@ const startServer = async () => {
           }
         };
         
+        app.get('/', (req: any, res: any) => res.send('Ad Astra Backend is Running!'));
         app.get('/api/health', (req: any, res: any) => res.status(200).send('Ad Astra API is running!'));
         app.post('/api/auth/guest', async (req: any, res: any) => {
             try {
@@ -217,7 +212,7 @@ const startServer = async () => {
                     await twilioClient.verify.v2.services(process.env.TWILIO_VERIFY_SERVICE_SID!).verifications.create({ to: `+91${phone}`, channel: 'sms' });
                     res.status(200).json({ message: "OTP sent successfully" });
                 } else {
-                    // Development mode: generate a mock OTP, save it, and send it back.
+                    // Development/Free Mode: generate a mock OTP, save it, and send it back.
                     const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
                     user.otp = mockOtp;
                     user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5-minute expiry
@@ -239,7 +234,7 @@ const startServer = async () => {
                     const verification_check = await twilioClient.verify.v2.services(process.env.TWILIO_VERIFY_SERVICE_SID!).verificationChecks.create({ to: `+91${phone}`, code: otp });
                     if (verification_check.status !== 'approved') return res.status(400).json({ message: "Invalid or expired OTP." });
                 } else {
-                    // Development mode: check against the saved mock OTP
+                    // Development/Free Mode: check against the saved mock OTP
                     const user = await User.findOne({ phone });
                     if (!user || user.otp !== otp) {
                         return res.status(400).json({ message: "Invalid OTP." });
@@ -318,6 +313,24 @@ const startServer = async () => {
             }
         });
 
+        // Helper to handle AI Errors (Rate limits etc.)
+        const handleAIError = (error: any, res: any, context: string) => {
+            console.error(`Gemini Error in ${context}:`, error);
+            
+            // Check specifically for Rate Limits (429)
+            const isRateLimit = error.status === 429 || 
+                                (error.error && error.error.code === 429) ||
+                                (error.message && (error.message.includes('429') || error.message.includes('quota')));
+
+            if (isRateLimit) {
+                return res.status(429).json({ 
+                    message: "AI Service Busy: Rate limit reached. Please wait a moment and try again." 
+                });
+            }
+
+            res.status(500).json({ message: error.message || "Failed to process AI request." });
+        };
+
         // --- NEW ENDPOINT: STEP 1 of online analysis ---
         app.post('/api/ai/describe-skin-image', authMiddleware, async (req: any, res: any) => {
             try {
@@ -348,8 +361,7 @@ const startServer = async () => {
                 res.json({ analysisId });
 
             } catch (error: any) {
-                console.error("Error in /api/ai/describe-skin-image:", error);
-                res.status(500).json({ message: error.message || "Failed to start image analysis." });
+                handleAIError(error, res, "/api/ai/describe-skin-image");
             }
         });
 
@@ -412,8 +424,7 @@ DOCTOR_SUGGESTION: [The type of specialist to see (e.g., 'Dermatologist'). If MI
                 });
 
             } catch (error: any) {
-                console.error("Error in /api/ai/get-skin-conclusion:", error);
-                res.status(500).json({ message: error.message || "Failed to get analysis conclusion." });
+                handleAIError(error, res, "/api/ai/get-skin-conclusion");
             }
         });
 
@@ -478,8 +489,7 @@ DOCTOR_SUGGESTION: [Specialist to see. If MILD, write NONE.]
                 });
 
             } catch (error: any) {
-                console.error("Error in /api/ai/analyze-skin (offline queue handler):", error);
-                res.status(500).json({ message: error.message || "Failed to analyze image due to an unexpected server error." });
+                handleAIError(error, res, "/api/ai/analyze-skin");
             }
         });
         
@@ -600,16 +610,7 @@ DOCTOR_SUGGESTION: [Specialist to see. If MILD, write NONE.]
                 res.json({ text: responseText, suggestions: [] });
             }
           } catch (error: any) {
-            console.error("Gemini Chat Error in /api/ai/chat:", error);
-            // Log full error details for debugging (inspecting the structure that caused rejection)
-            if (error.response) {
-                console.error("API Response Error Status:", error.response.status);
-                console.error("API Response Error Body:", JSON.stringify(error.response, null, 2));
-            }
-            if (error.message && error.message.includes('400')) {
-                 console.error("This is likely a history format error. The sanitizer above should have fixed it, but check logs.");
-            }
-            res.status(500).json({ message: "The chat service encountered an unexpected error." });
+            handleAIError(error, res, "/api/ai/chat");
           }
         });
         
@@ -676,13 +677,16 @@ DOCTOR_SUGGESTION: [Specialist to see. If MILD, write NONE.]
         });
 
         if (isProduction) {
+            // In a split deployment (Backend on Render, Frontend on Vercel), 
+            // the backend likely won't be serving static files.
+            // However, we keep this logic in case you decide to deploy monolithically.
             const frontendBuildPath = path.join(__dirname, '..', '..', 'dist');
-            app.use(express.static(frontendBuildPath));
-            app.get('*', (req: any, res: any) => {
-                res.sendFile(path.join(frontendBuildPath, 'index.html'));
-            });
-        } else {
-            app.get('/', (req: any, res: any) => res.send('Ad Astra Backend is Running in Development Mode'));
+            if (fs.existsSync(frontendBuildPath)) {
+                app.use(express.static(frontendBuildPath) as any);
+                app.get('*', (req: any, res: any) => {
+                    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+                });
+            }
         }
 
         app.listen(PORT, () => console.log(`\u{1F680} Server listening on http://localhost:${PORT} in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode.`));
