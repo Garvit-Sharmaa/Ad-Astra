@@ -1,0 +1,46 @@
+{
+  "users": [],
+  "bookings": {},
+  "feedback": [],
+  "otpStore": {},
+  "hospitals": [
+    { "name": "District General Hospital, Delhi", "city": "Delhi", "lat": 28.6139, "lon": 77.2090, "doctors": [
+        { "name": "Dr. Priya Sharma", "specialty": "General Physician" }, 
+        { "name": "Dr. Rohan Mehra", "specialty": "Dermatologist" }, 
+        { "name": "Dr. Anjali Gupta", "specialty": "Pediatrician" }
+    ]},
+    { "name": "Community Health Center, Gurgaon", "city": "Gurgaon", "lat": 28.4595, "lon": 77.0266, "doctors": [
+        { "name": "Dr. Vikram Singh", "specialty": "General Physician" }, 
+        { "name": "Dr. Sunita Patel", "specialty": "Dermatologist" }
+    ]},
+    { "name": "City Medical College, Mumbai", "city": "Mumbai", "lat": 19.0760, "lon": 72.8777, "doctors": [
+        { "name": "Dr. Rajesh Iyer", "specialty": "Cardiologist" }, 
+        { "name": "Dr. Fatima Khan", "specialty": "Dermatologist" }, 
+        { "name": "Dr. Arjun Desai", "specialty": "General Physician" }
+    ]},
+    { "name": "Apollo Hospital, Chennai", "city": "Chennai", "lat": 13.0827, "lon": 80.2707, "doctors": [
+        { "name": "Dr. Suresh Kumar", "specialty": "Orthopedics" }, 
+        { "name": "Dr. Meena Reddy", "specialty": "General Physician" }
+    ]},
+    { "name": "Manipal Hospital, Bangalore", "city": "Bangalore", "lat": 12.9716, "lon": 77.5946, "doctors": [
+        { "name": "Dr. Anand Rao", "specialty": "Neurologist" }, 
+        { "name": "Dr. Kavita Joshi", "specialty": "Dermatologist" }
+    ]},
+    { "name": "Fortis Hospital, Kolkata", "city": "Kolkata", "lat": 22.5726, "lon": 88.3639, "doctors": [
+        { "name": "Dr. Amit Banerjee", "specialty": "General Physician" }, 
+        { "name": "Dr. Soma Das", "specialty": "Cardiologist" }
+    ]},
+    { "name": "KIMS Hospitals, Hyderabad", "city": "Hyderabad", "lat": 17.4239, "lon": 78.4485, "doctors": [
+        { "name": "Dr. Srinivas Rao", "specialty": "General Physician" }, 
+        { "name": "Dr. Lakshmi Devi", "specialty": "Pediatrician" }
+    ]},
+    { "name": "Ruby Hall Clinic, Pune", "city": "Pune", "lat": 18.5309, "lon": 73.8784, "doctors": [
+        { "name": "Dr. Sameer Verma", "specialty": "Orthopedics" }, 
+        { "name": "Dr. Neha Kulkarni", "specialty": "Dermatologist" }
+    ]},
+    { "name": "Zydus Hospital, Ahmedabad", "city": "Ahmedabad", "lat": 23.0384, "lon": 72.5085, "doctors": [
+        { "name": "Dr. Jignesh Shah", "specialty": "Neurologist" }, 
+        { "name": "Dr. Anjali Desai", "specialty": "General Physician" }
+    ]}
+  ]
+}

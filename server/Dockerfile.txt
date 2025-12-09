@@ -1,0 +1,43 @@
+# Dockerfile
+
+# --- Stage 1: The "Builder" ---
+# Use a specific Node.js version as the base.
+# We name this stage "builder" so we can refer to it later.
+FROM node:20-alpine AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and package-lock.json first to leverage Docker's layer caching.
+# This means 'npm install' only re-runs if these files change.
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies like TypeScript) needed for the build
+RUN npm install
+
+# Copy the rest of your source code
+COPY . .
+
+# Run the build script (tsc), which creates the /dist folder
+RUN npm run build
+
+# --- Stage 2: The Final "Production" Image ---
+# Start from a fresh, clean Node.js image
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only the necessary package files
+COPY package*.json ./
+
+# Install ONLY production dependencies. This makes the final image much smaller and more secure.
+RUN npm install --production
+
+# Copy the compiled JavaScript from the "builder" stage into our final image
+COPY --from=builder /app/dist ./dist
+
+# Expose the port your app runs on
+EXPOSE 3002
+
+# The command to run when the container starts. This is the "Run Forever" part.
+CMD [ "npm", "start" ]

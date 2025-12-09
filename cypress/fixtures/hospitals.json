@@ -1,0 +1,16 @@
+[
+    { "name": "District General Hospital, Delhi", "city": "Delhi", "lat": 28.6139, "lon": 77.2090, "doctors": [
+        { "name": "Dr. Priya Sharma", "specialty": "General Physician" }, 
+        { "name": "Dr. Rohan Mehra", "specialty": "Dermatologist" }, 
+        { "name": "Dr. Anjali Gupta", "specialty": "Pediatrician" }
+    ]},
+    { "name": "Community Health Center, Gurgaon", "city": "Gurgaon", "lat": 28.4595, "lon": 77.0266, "doctors": [
+        { "name": "Dr. Vikram Singh", "specialty": "General Physician" }, 
+        { "name": "Dr. Sunita Patel", "specialty": "Dermatologist" }
+    ]},
+    { "name": "City Medical College, Mumbai", "city": "Mumbai", "lat": 19.0760, "lon": 72.8777, "doctors": [
+        { "name": "Dr. Rajesh Iyer", "specialty": "Cardiologist" }, 
+        { "name": "Dr. Fatima Khan", "specialty": "Dermatologist" }, 
+        { "name": "Dr. Arjun Desai", "specialty": "General Physician" }
+    ]}
+]

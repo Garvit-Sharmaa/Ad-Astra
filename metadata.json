@@ -1,0 +1,8 @@
+{
+  "name": "Ad Astra",
+  "description": "An AI-powered health assistant providing initial diagnosis for skin conditions and general symptoms, and facilitating OPD bookings at government hospitals.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
