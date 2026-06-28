@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ad Astra</string>
+    <string name="title_activity_main">Ad Astra</string>
+    <string name="package_name">com.adastra.health</string>
+    <string name="custom_url_scheme">com.adastra.health</string>
+</resources>

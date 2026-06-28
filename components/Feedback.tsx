@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { API_BASE_URL } from '../constants';
+import { BACKEND_URL } from '../constants'; // Updated Import
 
 interface FeedbackProps {
     onBack: () => void;
@@ -21,11 +22,12 @@ const Feedback = ({ onBack }: FeedbackProps) => {
         setError('');
         try {
             const token = localStorage.getItem('healthAppToken');
-            const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+            const response = await fetch(`${BACKEND_URL}/api/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'ngrok-skip-browser-warning': 'true' 
                 },
                 body: JSON.stringify({ feedback })
             });
@@ -43,15 +45,15 @@ const Feedback = ({ onBack }: FeedbackProps) => {
 
     if (isSubmitted) {
         return (
-            <div className="card p-8 text-center animate-fade-scale-in">
-                <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center bg-gradient-to-br from-brand-success to-green-600 shadow-xl shadow-green-500/30">
-                    <i className="fas fa-check text-white text-4xl"></i>
+            <div className="card rounded-[2rem] p-10 text-center animate-fade-scale-in flex flex-col items-center justify-center min-h-[400px]">
+                <div className="w-24 h-24 rounded-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-600 shadow-xl shadow-green-500/30 mb-6 animate-pulse-soft">
+                    <i className="fas fa-check text-white text-5xl"></i>
                 </div>
-                <h2 className="text-2xl font-bold mt-5 text-brand-success">{t('feedback_thanks_title')}</h2>
-                <p className="text-text-secondary mt-2">{t('feedback_thanks_desc')}</p>
+                <h2 className="text-3xl font-extrabold text-text-primary mb-3">{t('feedback_thanks_title')}</h2>
+                <p className="text-text-secondary text-lg mb-8 max-w-xs mx-auto">{t('feedback_thanks_desc')}</p>
                 <button
                     onClick={onBack}
-                    className="btn-primary w-full mt-8"
+                    className="btn-primary w-full max-w-sm py-4 text-lg"
                 >
                     {t('back_to_home')}
                 </button>
@@ -60,13 +62,18 @@ const Feedback = ({ onBack }: FeedbackProps) => {
     }
 
     return (
-        <div className="card p-6 animate-fade-scale-in">
-            <h2 className="text-3xl font-bold text-text-primary mb-2 text-center">{t('feedback_title')}</h2>
-            <p className="text-text-secondary mb-8 text-center">{t('feedback_desc')}</p>
+        <div className="card rounded-[2rem] p-6 sm:p-8 animate-fade-scale-in">
+            <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-bg-tertiary rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand-blue-light shadow-inner">
+                    <i className="fas fa-comment-dots text-3xl"></i>
+                </div>
+                <h2 className="text-3xl font-bold text-text-primary mb-2">{t('feedback_title')}</h2>
+                <p className="text-text-secondary">{t('feedback_desc')}</p>
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label htmlFor="feedback" className="block text-sm font-medium text-text-secondary mb-2">
+                    <label htmlFor="feedback" className="block text-sm font-bold text-text-secondary uppercase mb-2 ml-1">
                         {t('feedback_label')}
                     </label>
                     <textarea
@@ -74,18 +81,18 @@ const Feedback = ({ onBack }: FeedbackProps) => {
                         rows={6}
                         value={feedback}
                         onChange={e => setFeedback(e.target.value)}
-                        className="input-base"
+                        className="input-base resize-none text-lg"
                         placeholder={t('feedback_placeholder')}
                     />
                 </div>
                 
-                {error && <p className="text-red-400 text-center">{error}</p>}
+                {error && <div className="p-3 bg-red-500/10 text-red-400 rounded-xl text-center text-sm font-medium"><i className="fas fa-exclamation-circle mr-2"></i>{error}</div>}
 
-                <div className="flex flex-col space-y-3">
+                <div className="flex flex-col space-y-3 pt-2">
                     <button 
                         type="submit" 
                         disabled={!feedback.trim() || isLoading}
-                        className="btn-primary"
+                        className="btn-primary w-full py-4 text-lg shadow-lg shadow-brand-blue/20"
                     >
                         {isLoading ? t('submitting') : t('submit_feedback')}
                     </button>
@@ -93,7 +100,7 @@ const Feedback = ({ onBack }: FeedbackProps) => {
                         type="button"
                         onClick={onBack}
                         disabled={isLoading}
-                        className="btn-secondary"
+                        className="btn-secondary w-full py-4"
                     >
                         {t('back_to_home')}
                     </button>

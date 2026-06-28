@@ -1,8 +1,12 @@
+
 {
   "name": "ad-astra",
   "private": true,
   "version": "1.0.0",
+  "description": "AI-Powered Health Assistant",
+  "author": "Ad Astra Team",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "concurrently \"npm:dev:client\" \"npm:dev:server\"",
     "dev:client": "vite",
@@ -12,9 +16,14 @@
     "preview": "vite preview",
     "test": "vitest",
     "cy:open": "cypress open",
-    "cy:run": "cypress run"
+    "cy:run": "cypress run",
+    "fix-sdk": "node fix-android.js",
+    "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev:client\" \"npm run dev:server\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:pack": "npm run build && electron-builder --dir",
+    "electron:dist": "npm run build && electron-builder"
   },
   "dependencies": {
+    "@capgo/capacitor-updater": "^7.34.0",
     "@google/genai": "^1.18.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -41,7 +50,11 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "cypress": "^13.10.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "esbuild": "0.21.5",
     "jsdom": "^24.1.1",
     "nodemon": "^3.1.0",
     "postcss": "^8.4.38",
@@ -49,6 +62,27 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vite": "^5.2.0",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.adastra.health",
+    "productName": "Ad Astra",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.medical"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

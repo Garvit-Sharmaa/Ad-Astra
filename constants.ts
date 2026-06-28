@@ -1,7 +1,15 @@
-// In development, the Vite proxy in `vite.config.ts` handles forwarding `/api` requests
-// to the backend server. In production, the frontend and backend are served from the
-// same origin. Therefore, a relative path (`''`) works for both environments.
-export const API_BASE_URL = '';
+
+// ---------------------------------------------------------------------------
+// 🚀 FORCE REMOTE CONNECTION
+// We are hardcoding this to ensure the APK absolutely connects to Ngrok.
+// ---------------------------------------------------------------------------
+
+// RENAMED VARIABLE TO BREAK CACHE
+export const BACKEND_URL = 'https://furlable-june-geniculately.ngrok-free.dev';
+
+// NOTE: If you want to switch back to local development later, uncomment this:
+// const LOCAL_IP = '127.0.0.1'; 
+// export const BACKEND_URL = `http://${LOCAL_IP}:3005`;
 
 export const LANGUAGES = [
   { code: 'en', name: 'English', icon: '🇬🇧' },

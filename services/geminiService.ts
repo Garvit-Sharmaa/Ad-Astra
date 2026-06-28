@@ -1,51 +1,50 @@
+
 import { TriageResultData, ChatResponse, QueuedAnalysisRequest, User } from '../types';
-import { API_BASE_URL } from '../constants';
+import { BACKEND_URL } from '../constants';
 
 const ANALYSIS_QUEUE_KEY = 'analysisQueue';
 const ANALYSIS_RESULTS_KEY = 'analysisResults';
 
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const token = localStorage.getItem('healthAppToken');
+    const fullUrl = `${BACKEND_URL}${endpoint}`;
+    
+    console.log(`[API REQUEST] ${options.method || 'GET'} -> ${fullUrl}`);
+
     const headers = {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
         ...options.headers,
         'Authorization': `Bearer ${token}`
     };
 
     let response: Response;
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+        response = await fetch(fullUrl, { ...options, headers });
     } catch (networkError) {
-        console.error("Network error in apiFetch:", networkError);
-        throw new Error("Unable to connect to the server. Please check your internet connection and try again.");
+        console.error("Network Link Failed:", networkError);
+        throw new Error("Cannot reach server. You might be offline.");
     }
 
     if (!response.ok) {
-        let errorData = { message: `The server responded with an error (Status: ${response.status}).` };
+        let errorMessage = `Server responded with ${response.status}`;
         try {
-            const jsonData = await response.json();
-            if (jsonData.message) {
-                errorData.message = jsonData.message;
-            }
+            const errorJson = await response.json();
+            errorMessage = errorJson.message || errorMessage;
         } catch (e) {
-            console.error("Could not parse error response JSON.", e);
+            if (response.status === 404) errorMessage = "Requested feature is not yet available on this server version.";
+            if (response.status === 413) errorMessage = "The photo file is too large. Please resize it.";
         }
-        throw new Error(errorData.message);
+        throw new Error(errorMessage);
     }
     
-    try {
-        return await response.json();
-    } catch (e) {
-        console.error("Failed to parse successful response JSON.", e);
-        throw new Error("Received an invalid response from the server.");
-    }
+    return await response.json();
 }
 
 /**
- * Starts the two-step skin analysis process for online users.
- * @returns An object containing the unique analysisId for the session.
+ * Step 1: Upload image and get a clinical visual description.
  */
-export async function startSkinAnalysis(base64ImageData: string, mimeType: string): Promise<{ analysisId: string }> {
+export async function startSkinAnalysis(base64ImageData: string, mimeType: string): Promise<{ description: string }> {
     return await apiFetch('/api/ai/describe-skin-image', {
         method: 'POST',
         body: JSON.stringify({ base64ImageData, mimeType })
@@ -53,28 +52,20 @@ export async function startSkinAnalysis(base64ImageData: string, mimeType: strin
 }
 
 /**
- * Gets the final conclusion for a started skin analysis session.
- * @returns The TriageResultData object with the AI's conclusion.
+ * Step 2: Combine visual description and symptoms for triage.
  */
-export async function getSkinAnalysisConclusion(analysisId: string, mcqAnswers: Record<string, string>, language: string): Promise<TriageResultData> {
+export async function getSkinAnalysisConclusion(visualDescription: string, mcqAnswers: Record<string, string>, language: string): Promise<TriageResultData> {
     return await apiFetch('/api/ai/get-skin-conclusion', {
         method: 'POST',
-        body: JSON.stringify({ analysisId, mcqAnswers, language })
+        body: JSON.stringify({ visualDescription, mcqAnswers, language })
     });
 }
 
-
 export async function handleSymptomChat(message: string, language: string): Promise<ChatResponse> {
-   try {
-        const result = await apiFetch('/api/ai/chat', {
-            method: 'POST',
-            body: JSON.stringify({ message, language })
-        });
-        return result as ChatResponse;
-    } catch (error) {
-        console.error("Error in symptom chat:", error);
-        throw error;
-    }
+    return await apiFetch('/api/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message, language })
+    });
 }
 
 export async function updateUserProfile(updatedUser: { name: string; phone: string }): Promise<{ user: User, token?: string }> {
@@ -84,13 +75,9 @@ export async function updateUserProfile(updatedUser: { name: string; phone: stri
     });
 }
 
-// --- OFFLINE QUEUE LOGIC ---
+// --- OFFLINE SYNC LOGIC ---
 
-/**
- * Adds a skin analysis request to the offline queue in localStorage.
- */
 export async function queueAnalysisRequest(payload: { base64ImageData: string; mimeType: string; language: string; mcqAnswers: Record<string, string> }) {
-    console.log("Queuing analysis request for offline processing.");
     const queue = JSON.parse(localStorage.getItem(ANALYSIS_QUEUE_KEY) || '[]') as QueuedAnalysisRequest[];
     const newRequest: QueuedAnalysisRequest = {
         id: `req_${Date.now()}`,
@@ -101,37 +88,26 @@ export async function queueAnalysisRequest(payload: { base64ImageData: string; m
     localStorage.setItem(ANALYSIS_QUEUE_KEY, JSON.stringify(queue));
 }
 
-/**
- * Processes any queued analysis requests when the app comes back online.
- */
 export async function processAnalysisQueue() {
     let queue = JSON.parse(localStorage.getItem(ANALYSIS_QUEUE_KEY) || '[]') as QueuedAnalysisRequest[];
     if (queue.length === 0) return;
 
-    console.log(`Processing ${queue.length} items from the offline analysis queue.`);
-    
     const results = JSON.parse(localStorage.getItem(ANALYSIS_RESULTS_KEY) || '[]') as TriageResultData[];
 
     for (const request of queue) {
         try {
-            // The `apiFetch` function calls the single-step endpoint on the server, which is designed for this queue.
             const result = await apiFetch('/api/ai/analyze-skin', {
                 method: 'POST',
                 body: JSON.stringify(request.payload),
             });
             results.push(result);
-            // Remove successfully processed request from the queue
             queue = queue.filter(r => r.id !== request.id);
         } catch (error) {
-            console.error(`Failed to process queued request ${request.id}:`, error);
-            // Optionally, implement retry logic or move to a "failed" queue here.
-            // For now, we'll leave it in the queue to be retried next time.
+            console.error(`Offline request ${request.id} failed:`, error);
         }
     }
 
     localStorage.setItem(ANALYSIS_RESULTS_KEY, JSON.stringify(results));
     localStorage.setItem(ANALYSIS_QUEUE_KEY, JSON.stringify(queue));
-
-    // Notify the app that the queue has been processed so UI can update.
     window.dispatchEvent(new CustomEvent('queueProcessed'));
 }

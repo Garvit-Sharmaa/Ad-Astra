@@ -1,3 +1,4 @@
+
 import { Schema, model, Document } from 'mongoose';
 
 export interface IBooking extends Document {
@@ -9,8 +10,11 @@ export interface IBooking extends Document {
   relationship?: string;
   doctorName?: string;
   yourName?: string;
-  phone: string; // Phone number of the user who booked
+  phone: string; 
   userPhone: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  notes?: string;
+  triageSummary?: string;
 }
 
 const bookingSchema = new Schema<IBooking>({
@@ -23,7 +27,14 @@ const bookingSchema = new Schema<IBooking>({
   doctorName: { type: String },
   yourName: { type: String, required: true },
   phone: { type: String, required: true },
-  userPhone: { type: String, required: true, index: true }, // The phone number from the JWT for linking
+  userPhone: { type: String, required: true, index: true },
+  status: { 
+    type: String, 
+    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'], 
+    default: 'PENDING' 
+  },
+  notes: { type: String, default: '' },
+  triageSummary: { type: String }
 });
 
 const Booking = model<IBooking>('Booking', bookingSchema);

@@ -1,312 +1,281 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ad Astra</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://raw.githubusercontent.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org http://localhost:3005 http://127.0.0.1:3005 ws://localhost:3005 ws://127.0.0.1:3005 https://aistudio-hosting.com https://storage.googleapis.com https://*.ngrok-free.dev;">
+    <title>Ad Astra | AI Healthcare</title>
     <script>
       tailwind.config = {
-        darkMode: ['class', '[class="dark-mode"]'],
-        content: [
-          "./index.html",
-          "./**/*.tsx",
-        ],
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
               'brand-blue': 'var(--brand-blue)',
-              'brand-blue-light': 'var(--brand-blue-light)',
               'brand-blue-dark': 'var(--brand-blue-dark)',
-              'brand-success': 'var(--brand-success)',
-              'brand-warning': 'var(--brand-warning)',
+              'brand-blue-light': 'var(--brand-blue-light)',
               'bg-primary': 'var(--bg-primary)',
               'bg-secondary': 'var(--bg-secondary)',
               'bg-tertiary': 'var(--bg-tertiary)',
               'text-primary': 'var(--text-primary)',
               'text-secondary': 'var(--text-secondary)',
               'text-tertiary': 'var(--text-tertiary)',
-              'border-primary': 'var(--border-primary)',
-              'border-secondary': 'var(--border-secondary)',
-              'chat-ai-bubble': 'var(--chat-ai-bubble-bg)',
+              'border-pro': 'var(--border-primary)',
             },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            animation: {
+              'fade-scale-in': 'fadeScaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
+              'chat-bubble-in': 'chatBubbleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'float': 'float 6s ease-in-out infinite',
             },
+            keyframes: {
+              fadeScaleIn: {
+                '0%': { opacity: '0', transform: 'scale(0.98) translateY(10px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              pulseSoft: {
+                '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                '50%': { opacity: '0.85', transform: 'scale(1.02)' },
+              },
+              chatBubbleIn: {
+                '0%': { opacity: '0', transform: 'scale(0.9) translateY(10px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              }
+            }
           },
         },
-        plugins: [],
       }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-ZFCdeyWS2ZdlnxACiYS+KzZG+ELeNOpdYvEcEqlkZcScuIW/2A12pVgg4reUVYDEjV/BVlXLpEdZjhVW/tacvsQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        /* DARK MODE: Midnight Pro (High Contrast) */
+        --brand-blue: #6366f1; /* Indigo 500 */
+        --brand-blue-dark: #4f46e5; /* Indigo 600 */
+        --brand-blue-light: #818cf8; /* Indigo 400 */
+        
+        --bg-primary: #0f172a; /* Slate 900 */
+        --bg-secondary: #1e293b; /* Slate 800 */
+        --bg-tertiary: #334155; /* Slate 700 */
+        
+        --text-primary: #f8fafc; /* Slate 50 */
+        --text-secondary: #cbd5e1; /* Slate 300 */
+        --text-tertiary: #94a3b8; /* Slate 400 */
+        
+        --border-primary: rgba(255, 255, 255, 0.1);
+        --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+      }
+
+      html.light {
+        /* LIGHT MODE: Clinical Pure */
+        --brand-blue: #4f46e5;
+        --brand-blue-dark: #4338ca;
+        --brand-blue-light: #6366f1;
+        
+        --bg-primary: #f1f5f9; /* Slate 100 */
+        --bg-secondary: #ffffff; /* White */
+        --bg-tertiary: #e2e8f0; /* Slate 200 */
+        
+        --text-primary: #0f172a; /* Slate 900 */
+        --text-secondary: #475569; /* Slate 600 */
+        --text-tertiary: #64748b; /* Slate 500 */
+        
+        --border-primary: rgba(0, 0, 0, 0.08);
+        --card-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.1);
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        transition: background-color 0.4s ease, color 0.4s ease;
+        min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: 1.5rem;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+      }
+      
+      .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      html.light .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--brand-blue), var(--brand-blue-dark));
+        color: white;
+        font-weight: 700;
+        padding: 1rem 2rem;
+        border-radius: 1rem;
+        transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-primary::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(rgba(255,255,255,0.2), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .btn-primary:hover::after {
+        opacity: 1;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .btn-primary:disabled {
+        background: var(--bg-tertiary);
+        color: var(--text-tertiary);
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 1rem 2rem;
+        border-radius: 1rem;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-secondary:hover:not(:disabled) {
+        background: var(--bg-tertiary);
+      }
+
+      .input-base, .input-pro {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-primary);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        color: var(--text-primary);
+        width: 100%;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+      }
+
+      .input-base:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      }
+
+      .dashed-box {
+        border: 2px dashed var(--border-primary);
+        transition: all 0.2s ease;
+        background-color: transparent;
+      }
+
+      .dashed-box:hover {
+        border-color: var(--brand-blue);
+        background-color: rgba(99, 102, 241, 0.05);
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+      /* Glow Effects */
+      .glow-card:hover {
+        box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+        border-color: var(--brand-blue-light);
+      }
+      
+      .typing-indicator span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background-color: currentColor;
+        border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out both;
+      }
+      
+      .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+      .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+      
+      @keyframes typing {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "express": "https://aistudiocdn.com/express@^5.1.0",
-    "cors": "https://aistudiocdn.com/cors@^2.8.5",
-    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.2",
-    "jsonwebtoken": "https://aistudiocdn.com/jsonwebtoken@^9.0.2",
-    "fs/": "https://aistudiocdn.com/fs@^0.0.1-security/",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.18.0",
-    "fs": "https://aistudiocdn.com/fs@^0.0.1-security",
-    "url": "https://aistudiocdn.com/url@^0.11.4",
-    "i18next": "https://aistudiocdn.com/i18next@^23.11.5",
-    "react-i18next": "https://aistudiocdn.com/react-i18next@^14.1.2",
-    "i18next-browser-languagedetector": "https://aistudiocdn.com/i18next-browser-languagedetector@^8.0.0",
-    "vite": "https://aistudiocdn.com/vite@^7.1.5",
-    "@testing-library/jest-dom": "https://aistudiocdn.com/@testing-library/jest-dom@^6.8.0",
-    "vitest": "https://aistudiocdn.com/vitest@^3.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2",
-    "@testing-library/react": "https://aistudiocdn.com/@testing-library/react@^16.3.0",
-    "@testing-library/user-event": "https://aistudiocdn.com/@testing-library/user-event@^14.6.1",
-    "cypress": "https://aistudiocdn.com/cypress@^15.2.0",
-    "@testing-library/jest-dom/": "https://aistudiocdn.com/@testing-library/jest-dom@^6.8.0/",
-    "vitest/": "https://aistudiocdn.com/vitest@^3.2.4/",
-    "leaflet": "https://aistudiocdn.com/leaflet@^1.9.4",
-    "leaflet/": "https://aistudiocdn.com/leaflet@^1.9.4/",
-    "express-rate-limit": "https://aistudiocdn.com/express-rate-limit@^8.1.0",
-    "helmet": "https://aistudiocdn.com/helmet@^8.1.0",
-    "mongoose": "https://aistudiocdn.com/mongoose@^8.18.2",
-    "twilio": "https://aistudiocdn.com/twilio@^5.10.1",
-    "express-rate-limiter": "https://aistudiocdn.com/express-rate-limiter@^1.3.1",
-    "process": "https://aistudiocdn.com/process@^0.11.10",
-    "express-serve-static-core": "https://aistudiocdn.com/express-serve-static-core@^0.1.1",
-    "crypto": "https://aistudiocdn.com/crypto@^1.0.1"
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "url": "https://esm.sh/url@^0.11.4",
+    "leaflet/": "https://esm.sh/leaflet@^1.9.4/",
+    "leaflet": "https://esm.sh/leaflet@^1.9.4",
+    "path": "https://esm.sh/path@^0.12.7",
+    "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.3",
+    "express": "https://esm.sh/express@^5.2.1",
+    "cors": "https://esm.sh/cors@^2.8.5",
+    "i18next-browser-languagedetector": "https://esm.sh/i18next-browser-languagedetector@^8.2.0",
+    "dotenv": "https://esm.sh/dotenv@^17.2.3",
+    "@testing-library/jest-dom/": "https://esm.sh/@testing-library/jest-dom@^6.9.1/",
+    "vitest": "https://esm.sh/vitest@^4.0.16",
+    "vitest/": "https://esm.sh/vitest@^4.0.16/",
+    "os": "https://esm.sh/os@^0.1.2",
+    "i18next": "https://esm.sh/i18next@^25.7.3",
+    "helmet": "https://esm.sh/helmet@^8.1.0",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "react-i18next": "https://esm.sh/react-i18next@^16.5.0",
+    "@testing-library/react": "https://esm.sh/@testing-library/react@^16.3.1",
+    "@testing-library/user-event": "https://esm.sh/@testing-library/user-event@^14.6.1",
+    "mongoose": "https://esm.sh/mongoose@^9.0.2",
+    "cypress": "https://esm.sh/cypress@^15.8.1",
+    "@capgo/capacitor-updater": "https://esm.sh/@capgo/capacitor-updater@^8.40.2",
+    "twilio": "https://esm.sh/twilio@^5.11.1",
+    "react-router": "https://esm.sh/react-router@6.22.3",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3",
+    "@remix-run/router": "https://esm.sh/@remix-run/router@1.15.3"
   }
 }
 </script>
-<style>
-  :root {
-    --font-sans: 'Inter', sans-serif;
-    
-    /* Brand Colors - Modern Blue */
-    --brand-blue: #3b82f6;       /* blue-500 */
-    --brand-blue-light: #60a5fa; /* blue-400 */
-    --brand-blue-dark: #2563eb;  /* blue-600 */
-    --brand-success: #22c55e;    /* green-500 */
-    --brand-warning: #f59e0b;    /* amber-500 */
-    
-    /* Dark Theme (Default) - Deep Slate Blue base */
-    --bg-primary: #0f172a;         /* slate-900 */
-    --bg-secondary: #1e293b;       /* slate-800 */
-    --bg-tertiary: #334155;        /* slate-700 */
-    --text-primary: #f1f5f9;       /* slate-100 */
-    --text-secondary: #94a3b8;     /* slate-400 */
-    --text-tertiary: #64748b;       /* slate-500 */
-    --border-primary: #334155;     /* slate-700 */
-    --border-secondary: #475569;   /* slate-600 */
-    --chat-ai-bubble-bg: #334155;   /* slate-700 */
-    --aurora-gradient: radial-gradient(ellipse at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
-                       radial-gradient(ellipse at 90% 80%, rgba(96, 165, 250, 0.06) 0%, transparent 50%);
-  }
-
-  html.light-mode {
-    --bg-primary: #f1f5f9;         /* slate-100 */
-    --bg-secondary: #ffffff;       /* white */
-    --bg-tertiary: #f8fafc;        /* slate-50 */
-    --text-primary: #0f172a;       /* slate-900 */
-    --text-secondary: #475569;     /* slate-600 */
-    --text-tertiary: #9ca3af;       /* gray-400 */
-    --border-primary: #e2e8f0;     /* slate-200 */
-    --border-secondary: #cbd5e1;   /* slate-300 */
-    --chat-ai-bubble-bg: #f1f5f9;   /* slate-100 */
-    --aurora-gradient: radial-gradient(ellipse at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 45%),
-                       radial-gradient(ellipse at 90% 80%, rgba(96, 165, 250, 0.03) 0%, transparent 50%);
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    background-image: var(--aurora-gradient);
-    background-attachment: fixed;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    overflow-x: hidden;
-    background-size: 200% 200%;
-    animation: aurora-shift 25s ease infinite;
-  }
-
-  /* Animation Keyframes */
-  @keyframes aurora-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes fade-scale-in {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes slide-in-right {
-    from { opacity: 0; transform: translateX(30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes slide-in-left {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes pulse-soft {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-  }
-  
-  /* Animation Classes */
-  .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-  .animate-fade-scale-in { animation: fade-scale-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-  .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
-  .animate-chat-bubble-in { animation: fadeInUp 0.3s ease-out forwards; }
-  .animate-slide-in-right { animation: slide-in-right 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-  .animate-slide-in-left { animation: slide-in-left 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-  .animate-pulse-soft { animation: pulse-soft 2.5s infinite ease-in-out; }
-
-  /* New Card Styles */
-  .card {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 1.5rem; /* 24px */
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-  }
-  
-  /* Glow Card on Hover */
-  .glow-card {
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .glow-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -4px rgba(0,0,0,0.07);
-  }
-  .glow-card::before {
-    content: '';
-    position: absolute;
-    left: var(--x, 50%);
-    top: var(--y, 50%);
-    transform: translate(-50%, -50%);
-    z-index: 1;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, var(--brand-blue-light) 0%, transparent 40%);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-  }
-  .glow-card:hover::before { opacity: 0.1; }
-  .glow-card > * { position: relative; z-index: 2; }
-  
-  /* Primary Button Style */
-  .btn-primary {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 0.75rem 1.25rem; font-weight: 600; color: white;
-    border-radius: 0.75rem; /* 12px */
-    background: linear-gradient(to right, var(--brand-blue-dark), var(--brand-blue));
-    box-shadow: 0 4px 15px 0 rgba(59, 130, 246, 0.2);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform: scale(1); border: none;
-  }
-  .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.3);
-    transform: scale(1.03);
-  }
-  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
-  .btn-primary:disabled {
-    background: var(--text-tertiary);
-    cursor: not-allowed; box-shadow: none; transform: scale(1); opacity: 0.7;
-  }
-  
-  /* Warning Button Style (for TriageResult) */
-  .btn-warning {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 0.75rem 1.25rem; font-weight: 600; color: #431407; /* amber-950 */
-    border-radius: 0.75rem;
-    background: linear-gradient(to right, #f59e0b, #fbbf24); /* amber-500, amber-400 */
-    box-shadow: 0 4px 15px 0 rgba(245, 158, 11, 0.25);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    transform: scale(1); border: none;
-  }
-  html.dark-mode .btn-warning { color: white; }
-  .btn-warning:hover:not(:disabled) {
-    box-shadow: 0 6px 20px 0 rgba(245, 158, 11, 0.35);
-    transform: scale(1.03);
-  }
-  .btn-warning:active:not(:disabled) { transform: scale(0.98); }
-  
-  /* Secondary Button Style */
-  .btn-secondary {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 0.75rem 1.25rem; font-weight: 600;
-    border-radius: 0.75rem;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-    transition: all 0.2s ease;
-    transform: scale(1);
-  }
-  .btn-secondary:hover:not(:disabled) {
-    background-color: var(--border-primary);
-    border-color: var(--border-secondary);
-  }
-  .btn-secondary:active:not(:disabled) {
-    transform: scale(0.98);
-  }
-  .btn-secondary:disabled {
-    cursor: not-allowed; opacity: 0.6;
-  }
-
-  /* Custom Input Styles */
-  .input-base {
-    display: block; width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    background-color: var(--bg-tertiary);
-    border: 1px solid var(--border-primary);
-    border-radius: 0.75rem;
-    color: var(--text-primary);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  .input-base:focus {
-    outline: none;
-    border-color: var(--brand-blue);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-secondary); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
-
-  /* Custom AI typing indicator */
-  .typing-indicator span {
-    height: 8px; width: 8px;
-    background-color: var(--brand-blue-light);
-    border-radius: 50%; display: inline-block;
-    animation: wave 1.4s infinite ease-in-out both;
-  }
-  .typing-indicator span:nth-of-type(1) { animation-delay: -0.32s; }
-  .typing-indicator span:nth-of-type(2) { animation-delay: -0.16s; }
-  @keyframes wave {
-    0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); }
-  }
-
-</style>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>

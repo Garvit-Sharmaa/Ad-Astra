@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { View, User } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -80,6 +81,13 @@ const Header = ({ onHomeClick, showHome, onNavigate, onToggleTheme, theme, onLog
                 {isMenuOpen && (
                     <div className="absolute top-16 right-0 card w-64 p-2 shadow-2xl z-50 animate-fade-in-up origin-top-right">
                         <ul className="space-y-1">
+                            <li>
+                                <button onClick={() => handleMenuNavigate(View.Dashboard)} className="w-full text-left flex items-center gap-4 px-4 py-2.5 rounded-lg hover:bg-bg-tertiary transition-colors text-text-primary font-semibold">
+                                    <i className="fas fa-chart-line w-5 text-center text-brand-blue-light"></i>
+                                    <span>{t('my_dashboard')}</span>
+                                </button>
+                            </li>
+                            <li className="border-t border-border-primary my-1 opacity-50"></li>
                             <li>
                                 <button onClick={() => handleMenuNavigate(View.Language)} className="w-full text-left flex items-center gap-4 px-4 py-2.5 rounded-lg hover:bg-bg-tertiary transition-colors text-text-primary">
                                     <i className="fas fa-language w-5 text-center text-text-secondary"></i>

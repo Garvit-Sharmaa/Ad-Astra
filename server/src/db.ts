@@ -34,14 +34,34 @@ const connectDB = () => {
           version: '1',
           strict: true,
           deprecationErrors: true,
-        }
+        },
+        // Add a reasonable timeout so it fails faster if IP is blocked
+        serverSelectionTimeoutMS: 5000, 
       });
       console.log("✅ MongoDB Connected successfully!");
       resolve();
-    } catch (error) {
-      console.error('❌ MongoDB connection error.');
-      console.error('   1. Check if your IP is whitelisted in MongoDB Atlas (Network Access tab).');
-      console.error('   2. Check if your <db_password> is correct in the .env file.');
+    } catch (error: any) {
+      console.error('\n❌ MongoDB connection error.');
+      
+      // Check for specific "ReplicaSetNoPrimary" error which indicates IP blocking
+      const isReplicaSetError = error.reason?.type === 'ReplicaSetNoPrimary' || 
+                                error.cause?.type === 'ReplicaSetNoPrimary' ||
+                                (error.message && error.message.includes('ReplicaSetNoPrimary'));
+
+      if (isReplicaSetError) {
+          console.error('\n\x1b[41m\x1b[37m 🛑 CRITICAL: IP ADDRESS NOT WHITELISTED \x1b[0m');
+          console.error('\x1b[33mThe "ReplicaSetNoPrimary" error means your computer cannot reach the MongoDB servers.\x1b[0m');
+          console.error('\x1b[33mThis is almost always because your current IP address is not allowed in MongoDB Atlas.\x1b[0m');
+          console.error('\n👉 \x1b[1mHOW TO FIX:\x1b[0m');
+          console.error('   1. Go to your MongoDB Atlas Dashboard.');
+          console.error('   2. Click "Network Access" in the left sidebar.');
+          console.error('   3. Click "Add IP Address".');
+          console.error('   4. Select "Add Current IP Address" (or "Allow Access from Anywhere" for development).');
+          console.error('   5. Wait 1-2 minutes for changes to apply, then restart this server.\n');
+      } else {
+          console.error('   1. Check if your IP is whitelisted in MongoDB Atlas (Network Access tab).');
+          console.error('   2. Check if your <db_password> is correct in the .env file.');
+      }
       
       // Log the actual error object for detailed inspection
       console.error('   Detailed Error:', error);

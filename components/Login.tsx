@@ -1,290 +1,349 @@
-import React, { useState, useRef, KeyboardEvent, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import LoadingSpinner from './LoadingSpinner';
-import { API_BASE_URL } from '../constants';
+import { BACKEND_URL } from '../constants';
 
 interface LoginProps {
   onLoginSuccess: (data: { user: User, token: string }) => void;
   onBack: () => void;
+  onToggleTheme: () => void;
 }
 
-const Login = ({ onLoginSuccess, onBack }: LoginProps) => {
-    const [step, setStep] = useState<'details' | 'otp'>('details');
-    const [name, setName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
-    const [error, setError] = useState<string | null>(null);
+type LoginStep = 'role_select' | 'credentials' | 'otp_verify';
+
+const Login = ({ onLoginSuccess, onBack, onToggleTheme }: LoginProps) => {
+    const [step, setStep] = useState<LoginStep>('role_select');
+    const [role, setRole] = useState<UserRole>('PATIENT');
+    const [name, setName] = useState(''); // New state for Patient Name
+    const [identifier, setIdentifier] = useState(''); // Email or Phone
+    const [password, setPassword] = useState('');
+    const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [resendTimer, setResendTimer] = useState(0);
-    const [isResending, setIsResending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const { t } = useTranslation();
-    const otpInputsRef = useRef<HTMLInputElement[]>([]);
-    const isSubmitting = useRef(false);
-    
-    useEffect(() => {
-        let interval: number | undefined;
-        if (step === 'otp' && resendTimer > 0) {
-            interval = window.setInterval(() => {
-                setResendTimer(prev => prev - 1);
-            }, 1000);
-        }
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [step, resendTimer]);
 
-    const apiPost = async (endpoint: string, body: object, defaultError: string) => {
+    const resetState = () => {
+        setStep('role_select');
+        setError(null);
+        setIdentifier('');
+        setName('');
+        setPassword('');
+        setOtp('');
+    };
+
+    const handleRoleSelect = (selectedRole: UserRole) => {
+        setRole(selectedRole);
+        setStep('credentials');
+    };
+
+    const handleGuestLogin = async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            const response = await fetch(`${BACKEND_URL}/api/auth/guest`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                onLoginSuccess(data);
+            } else {
+                setError(data.message || "Guest login failed.");
+            }
+        } catch (err) {
+            setError("Network error.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleStaffLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/auth/login-staff`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ email: identifier, password, role })
             });
-
-            if (!response.ok) {
-                let errorMessage = defaultError;
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                } catch (jsonError) {
-                    errorMessage = `Server error (${response.status}). Please check if the backend is running correctly.`;
-                }
-                throw new Error(errorMessage);
+            const data = await response.json();
+            if (response.ok) {
+                onLoginSuccess(data);
+            } else {
+                setError(data.message || "Invalid credentials. Please check your ID and Password.");
             }
-            return await response.json();
-
         } catch (err) {
-            if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('NetworkError'))) {
-                throw new Error('Network Error: Could not connect to the server. Please ensure the backend is running.');
-            }
-            throw err; // Re-throw other errors (like the one from !response.ok)
+            setError("Network error. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleSendOtp = async (e: React.FormEvent) => {
+    const handleRequestOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isSubmitting.current) return;
-        setError(null);
-
+        if (identifier.length !== 10) {
+            setError("Please enter a valid 10-digit mobile number.");
+            return;
+        }
         if (!name.trim()) {
-            setError(t('error_invalid_name'));
+            setError("Please enter your full name.");
             return;
         }
-        if (!/^\d{10}$/.test(phone)) {
-            setError(t('error_invalid_phone'));
-            return;
-        }
-        
-        isSubmitting.current = true;
         setIsLoading(true);
-        try {
-            const data = await apiPost('/api/auth/send-otp', { name, phone }, 'Failed to send OTP');
-            if (data.otp) {
-                console.log(`%c[DEV ONLY] OTP for ${phone} is: ${data.otp}`, 'background: #3b82f6; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
-            }
-            setStep('otp');
-            setResendTimer(30);
-        } catch (err: any) {
-            setError(err.message || t('error_server_connect'));
-        } finally {
-            setIsLoading(false);
-            isSubmitting.current = false;
-        }
-    };
-
-    const handleResendOtp = async () => {
-        if (resendTimer > 0 || isResending) return;
-        setIsResending(true);
         setError(null);
         try {
-            const data = await apiPost('/api/auth/send-otp', { name, phone }, 'Failed to resend OTP');
-            if (data.otp) {
-                console.log(`%c[DEV ONLY] OTP for ${phone} is: ${data.otp}`, 'background: #3b82f6; color: white; font-weight: bold; padding: 4px 8px; border-radius: 4px;');
+            const response = await fetch(`${BACKEND_URL}/api/auth/request-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: identifier })
+            });
+            
+            if (response.ok) {
+                setStep('otp_verify');
+            } else {
+                const data = await response.json();
+                setError(data.message || "Failed to send OTP.");
             }
-            setResendTimer(30); // Restart timer
-        } catch (err: any) {
-            setError(err.message || 'Failed to resend OTP');
+        } catch (err) {
+            setError("Failed to reach server.");
         } finally {
-            setIsResending(false);
+            setIsLoading(false);
         }
     };
 
-    const handleVerifyOtp = async (e: React.FormEvent) => {
+    const handleVerifyOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isSubmitting.current) return;
-        setError(null);
-        
-        const finalOtp = otp.join('');
-        if (finalOtp.length !== 6) {
-            setError(t('error_incomplete_otp'));
+        if (otp.length !== 6) {
+            setError("Please enter the 6-digit code.");
             return;
         }
-        
-        isSubmitting.current = true;
         setIsLoading(true);
-        try {
-            const data = await apiPost(
-                '/api/auth/verify-otp',
-                { name, phone, otp: finalOtp },
-                'OTP verification failed'
-            );
-            onLoginSuccess(data);
-        } catch (err: any) {
-             setError(err.message || t('error_server_connect'));
-        } finally {
-            setIsLoading(false);
-            isSubmitting.current = false;
-        }
-    };
-    
-    const handleGuestLogin = async () => {
-        if (isSubmitting.current) return;
         setError(null);
-        isSubmitting.current = true;
-        setIsLoading(true);
         try {
-            const data = await apiPost(
-                '/api/auth/guest',
-                {},
-                'Failed to start guest session'
-            );
-            onLoginSuccess(data);
-        } catch (err: any) {
-            setError(err.message || t('error_server_connect'));
+            const response = await fetch(`${BACKEND_URL}/api/auth/login-patient`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: identifier, otp, name })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                onLoginSuccess(data);
+            } else {
+                setError(data.message || "Invalid OTP code.");
+            }
+        } catch (err) {
+            setError("Verification failed.");
         } finally {
             setIsLoading(false);
-            isSubmitting.current = false;
-        }
-    };
-
-    const handleOtpChange = (index: number, value: string) => {
-        if (isNaN(Number(value))) return;
-
-        const newOtp = [...otp];
-        newOtp[index] = value.substring(value.length - 1);
-        setOtp(newOtp);
-
-        if (value && index < 5) {
-            otpInputsRef.current[index + 1]?.focus();
-        }
-    };
-
-    const handleOtpKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Backspace" && !otp[index] && index > 0) {
-            otpInputsRef.current[index - 1]?.focus();
-        }
-    };
-    
-    const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-        const pastedData = e.clipboardData.getData('text');
-        if (pastedData && /^\d{6}$/.test(pastedData)) {
-            e.preventDefault();
-            const newOtp = pastedData.split('');
-            setOtp(newOtp);
-            otpInputsRef.current[5]?.focus();
         }
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[80vh]">
-            <div className="w-full max-w-sm card p-6 sm:p-8">
-                {step === 'details' ? (
-                    <div className="animate-fade-scale-in">
-                        <h2 className="text-2xl font-bold text-text-primary mb-2 text-center">{t('login_title')}</h2>
-                        <p className="text-text-secondary mb-8 text-center">{t('login_desc')}</p>
-                        <form onSubmit={handleSendOtp} className="space-y-6">
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-1">{t('login_name_label')}</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    className="input-base"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="phone" className="block text-sm font-medium text-text-secondary mb-1">{t('login_phone_label')}</label>
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    value={phone}
-                                    onChange={e => setPhone(e.target.value)}
-                                    maxLength={10}
-                                    className="input-base"
-                                    required
-                                />
-                            </div>
-                            {error && <p className="text-red-400 text-center text-sm">{error}</p>}
-                            <div className="pt-2 flex flex-col space-y-3">
-                                <button type="submit" className="btn-primary" disabled={isLoading}>
-                                    {isLoading ? <LoadingSpinner /> : t('login_send_otp')}
-                                </button>
-                                <button type="button" onClick={onBack} className="btn-secondary">{t('back')}</button>
-                            </div>
-                        </form>
-                         <div className="relative my-6">
-                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                <div className="w-full border-t border-border-primary"></div>
-                            </div>
-                            <div className="relative flex justify-center">
-                                <span className="bg-bg-secondary px-3 text-sm text-text-secondary">OR</span>
-                            </div>
-                        </div>
-                        <button type="button" onClick={handleGuestLogin} className="w-full text-brand-blue-light font-bold py-3 px-4 rounded-xl hover:bg-bg-tertiary transition-colors disabled:opacity-50 flex items-center justify-center" disabled={isLoading}>
-                           {t('continue_as_guest')}
-                        </button>
+        <div className="flex flex-col min-h-[85vh] justify-center items-center px-4 animate-fade-scale-in">
+             <div className="w-full max-w-md pro-card p-8 sm:p-10 space-y-8">
+                
+                {/* Header Section */}
+                <div className="text-center space-y-2">
+                    <div className="w-14 h-14 bg-brand-blue/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-brand-blue/20">
+                        <i className={`fas ${step === 'role_select' ? 'fa-shield-halved' : role === 'PATIENT' ? 'fa-user-circle' : role === 'DOCTOR' ? 'fa-user-md' : 'fa-hospital'} text-brand-blue text-2xl`}></i>
                     </div>
-                ) : (
-                    <div className="animate-fade-scale-in">
-                        <h2 className="text-2xl font-bold text-text-primary mb-2 text-center">{t('login_otp_title')}</h2>
-                        <p className="text-text-secondary mb-6 text-center">{t('login_otp_desc')}</p>
-                        <form onSubmit={handleVerifyOtp} className="space-y-6">
-                            <div className="flex justify-center gap-2">
-                                {otp.map((digit, index) => (
-                                    <input
-                                        key={index}
-                                        ref={el => { otpInputsRef.current[index] = el as HTMLInputElement; }}
-                                        type="text"
-                                        maxLength={1}
-                                        value={digit}
-                                        onChange={e => handleOtpChange(index, e.target.value)}
-                                        onKeyDown={e => handleOtpKeyDown(index, e)}
-                                        onPaste={index === 0 ? handleOtpPaste : undefined}
-                                        className="w-12 h-14 text-center text-2xl font-bold bg-bg-tertiary border-2 border-border-primary rounded-lg focus:ring-2 focus:ring-brand-blue-light focus:outline-none focus:border-brand-blue-light transition-all"
-                                    />
-                                ))}
-                            </div>
-                            <div className="text-center text-sm text-text-secondary pt-2">
-                                {resendTimer > 0 ? (
-                                    <p>{t('resend_otp_in', { seconds: resendTimer })}</p>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={handleResendOtp}
-                                        disabled={isResending || isLoading}
-                                        className="font-semibold text-brand-blue-light hover:underline disabled:text-text-tertiary disabled:no-underline flex items-center justify-center w-full"
-                                    >
-                                        {isResending ? <LoadingSpinner /> : t('resend_otp')}
-                                    </button>
-                                )}
-                            </div>
-                            {error && <p className="text-red-400 text-center text-sm">{error}</p>}
-                             <div className="pt-2 flex flex-col space-y-3">
-                                <button type="submit" className="btn-primary" disabled={isLoading || isResending}>
-                                    {isLoading ? <LoadingSpinner /> : t('login_verify_otp')}
-                                </button>
-                                <button type="button" onClick={() => {setError(null); setStep('details');}} className="btn-secondary">{t('back')}</button>
-                            </div>
-                        </form>
+                    <h2 className="text-2xl font-extrabold tracking-tight text-white">
+                        {step === 'role_select' ? t('login_title') : 
+                         step === 'otp_verify' ? 'Verify Identity' : 
+                         `${role.charAt(0) + role.slice(1).toLowerCase()} Login`}
+                    </h2>
+                    <p className="text-text-secondary text-sm font-medium">
+                        {step === 'role_select' ? "Select your access level to proceed" : 
+                         step === 'otp_verify' ? `Enter the code sent to ${identifier}` :
+                         role === 'PATIENT' ? "Register with your name and mobile" : "Enter your professional credentials"}
+                    </p>
+                </div>
+
+                {error && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-xl flex items-center gap-2 animate-shake">
+                        <i className="fas fa-circle-exclamation"></i>
+                        <span>{error}</span>
                     </div>
                 )}
-            </div>
+
+                {/* Step 1: Role Selection */}
+                {step === 'role_select' && (
+                    <div className="grid grid-cols-1 gap-4">
+                        <RoleButton 
+                            icon="fa-user-md" 
+                            title="As a Doctor" 
+                            desc="Access your patient queue" 
+                            color="text-emerald-400" 
+                            bg="bg-emerald-500/10" 
+                            onClick={() => handleRoleSelect('DOCTOR')} 
+                        />
+                        <RoleButton 
+                            icon="fa-hospital" 
+                            title="As Admin / Hospital" 
+                            desc="Manage facility OPD load" 
+                            color="text-indigo-400" 
+                            bg="bg-indigo-500/10" 
+                            onClick={() => handleRoleSelect('HOSPITAL')} 
+                        />
+                        <RoleButton 
+                            icon="fa-user-injured" 
+                            title="As a Patient" 
+                            desc="Triage symptoms & book" 
+                            color="text-brand-blue" 
+                            bg="bg-brand-blue/10" 
+                            onClick={() => handleRoleSelect('PATIENT')} 
+                        />
+                        
+                        <div className="relative py-4">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                            <div className="relative flex justify-center text-[10px] uppercase font-black text-text-tertiary tracking-[0.2em]"><span className="bg-surface-dark px-4">OR</span></div>
+                        </div>
+
+                        <button 
+                            onClick={handleGuestLogin}
+                            className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                        >
+                            <i className="fas fa-user-secret opacity-60"></i>
+                            Continue as Guest
+                        </button>
+                    </div>
+                )}
+
+                {/* Step 2: Credentials */}
+                {step === 'credentials' && (
+                    <form onSubmit={role === 'PATIENT' ? handleRequestOTP : handleStaffLogin} className="space-y-6">
+                        <div className="space-y-4">
+                            {role === 'PATIENT' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Full Name</label>
+                                    <input 
+                                        type="text"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        className="input-pro w-full"
+                                        placeholder="John Doe"
+                                        required 
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">
+                                    {role === 'PATIENT' ? "Mobile Number" : "User ID / Email"}
+                                </label>
+                                <input 
+                                    type={role === 'PATIENT' ? "tel" : "text"}
+                                    value={identifier}
+                                    onChange={e => setIdentifier(e.target.value)}
+                                    className="input-pro w-full"
+                                    placeholder={role === 'PATIENT' ? "9876543210" : "name@hospital.gh"}
+                                    required 
+                                />
+                            </div>
+                            
+                            {role !== 'PATIENT' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">Password</label>
+                                    <input 
+                                        type="password"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        className="input-pro w-full"
+                                        placeholder="••••••••"
+                                        required 
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-3 pt-2">
+                            <button type="submit" className="btn-primary w-full h-14 flex items-center justify-center gap-3" disabled={isLoading}>
+                                {isLoading ? <LoadingSpinner /> : (
+                                    <>
+                                        <i className={`fas ${role === 'PATIENT' ? 'fa-paper-plane' : 'fa-sign-in-alt'}`}></i>
+                                        {role === 'PATIENT' ? "Get OTP Code" : "Sign In to Portal"}
+                                    </>
+                                )}
+                            </button>
+                            <button type="button" onClick={resetState} className="btn-secondary w-full h-14">
+                                {t('back')}
+                            </button>
+                        </div>
+                    </form>
+                )}
+
+                {/* Step 3: OTP Verification */}
+                {step === 'otp_verify' && (
+                    <form onSubmit={handleVerifyOTP} className="space-y-6 animate-fade-scale-in">
+                        <div className="space-y-4">
+                            <div className="flex justify-between gap-2">
+                                <input 
+                                    type="text" 
+                                    maxLength={6}
+                                    value={otp}
+                                    onChange={e => setOtp(e.target.value)}
+                                    className="input-pro w-full text-center text-2xl font-mono tracking-[0.5em] h-16"
+                                    placeholder="000000"
+                                    autoFocus
+                                    required 
+                                />
+                            </div>
+                            <p className="text-center text-xs text-text-secondary">
+                                Didn't receive it? <button type="button" className="text-brand-blue font-bold hover:underline">Resend</button>
+                            </p>
+                        </div>
+                        
+                        <div className="flex flex-col gap-3 pt-2">
+                            <button type="submit" className="btn-primary w-full h-14" disabled={isLoading}>
+                                {isLoading ? <LoadingSpinner /> : "Verify & Start Triage"}
+                            </button>
+                            <button type="button" onClick={() => setStep('credentials')} className="btn-secondary w-full h-14">
+                                Change Details
+                            </button>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+                            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-widest">Login Security</p>
+                            <p className="text-xs text-brand-blue-light font-medium mt-1">If this is not your verified number, use code: <span className="font-bold">123456</span></p>
+                        </div>
+                    </form>
+                )}
+             </div>
+             
+             <button onClick={onBack} className="mt-8 text-text-secondary hover:text-white font-bold text-sm transition-colors">
+                <i className="fas fa-globe mr-2"></i> Change Language
+             </button>
         </div>
     );
 };
+
+interface RoleBtnProps {
+    icon: string;
+    title: string;
+    desc: string;
+    color: string;
+    bg: string;
+    onClick: () => void;
+}
+
+const RoleButton = ({ icon, title, desc, color, bg, onClick }: RoleBtnProps) => (
+    <button 
+        onClick={onClick}
+        className="group flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-left active:scale-[0.98]"
+    >
+        <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
+            <i className={`fas ${icon} text-xl`}></i>
+        </div>
+        <div className="flex-grow">
+            <p className="font-bold text-white text-base">{title}</p>
+            <p className="text-xs text-text-secondary font-medium">{desc}</p>
+        </div>
+        <i className="fas fa-chevron-right text-[10px] text-text-tertiary group-hover:translate-x-1 transition-transform"></i>
+    </button>
+);
 
 export default Login;

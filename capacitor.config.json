@@ -1,0 +1,14 @@
+
+{
+  "appId": "com.adastra.health",
+  "appName": "Ad Astra",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorUpdater": {
+      "autoUpdate": true
+    }
+  }
+}
