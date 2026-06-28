@@ -4,7 +4,11 @@ This is the server-side application for **Ad Astra**. It acts as the bridge betw
 
 We built this backend to keep our API keys secure and to handle business logic like session management and appointment bookings away from the client-side.
 
+<<<<<<< HEAD
 ## 🏗️ Architecture at a Glance
+=======
+##  Architecture at a Glance
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 *   **Runtime:** Node.js with Express.
 *   **Database:** MongoDB Atlas (Cloud). We use `Mongoose` for schema modeling.
@@ -16,7 +20,11 @@ We built this backend to keep our API keys secure and to handle business logic l
 
 ---
 
+<<<<<<< HEAD
 ## ⚡ Quick Start
+=======
+##  Quick Start
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 ### 1. Prerequisites
 You need **Node.js** installed. You also need a **MongoDB Atlas** URI (free tier works fine) and a **Google Gemini API Key**.
@@ -49,11 +57,19 @@ TWILIO_VERIFY_SERVICE_SID=
 ```bash
 npm run dev
 ```
+<<<<<<< HEAD
 The server will start on `http://localhost:3002`.
 
 ---
 
 ## 🧠 How the AI Logic Works
+=======
+The server will start on `http://localhost:3005`.
+
+---
+
+##  How the AI Logic Works
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 We don't just pass the user's message to Gemini. We wrap it in a **System Instruction**.
 
@@ -68,7 +84,11 @@ We don't just pass the user's message to Gemini. We wrap it in a **System Instru
 
 ---
 
+<<<<<<< HEAD
 ## 🛠️ API Routes
+=======
+##  API Routes
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 ### Auth
 *   `POST /api/auth/send-otp`: Takes a phone number. If Twilio keys are missing, it generates a random 6-digit code and logs it to the terminal.
@@ -86,7 +106,11 @@ We don't just pass the user's message to Gemini. We wrap it in a **System Instru
 
 ---
 
+<<<<<<< HEAD
 ## 🐛 Common Issues & Fixes
+=======
+## Common Issues & Fixes
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 **1. "MongoNetworkError" or "ReplicaSetNoPrimary"**
 *   **What it means:** Your computer's IP address isn't allowed to talk to MongoDB Atlas.
@@ -102,7 +126,11 @@ We don't just pass the user's message to Gemini. We wrap it in a **System Instru
 
 ---
 
+<<<<<<< HEAD
 ## 👨‍💻 Developer Notes
+=======
+##  Developer Notes
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 
 *   **Seeding Data:** If you connect to a fresh database, the server will automatically insert dummy hospitals from `db.json` on the first run. You don't need to manually import anything.
 *   **Offline Queue:** There's a special endpoint `/api/ai/analyze-skin` designed for the "Offline Mode." It combines the two-step AI process into one call so it can be processed in the background when the user reconnects.

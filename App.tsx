@@ -2,9 +2,14 @@ import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from
 import { View, TriageResultData, BookingDetails, User } from './types';
 import { useTranslation } from 'react-i18next';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { BACKEND_URL, LANGUAGES } from './constants';
 import { processAnalysisQueue } from './services/geminiService';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
+=======
+import { API_BASE_URL, LANGUAGES } from './constants';
+import { processAnalysisQueue } from './services/AIService';
+>>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
 =======
 import { API_BASE_URL, LANGUAGES } from './constants';
 import { processAnalysisQueue } from './services/AIService';
