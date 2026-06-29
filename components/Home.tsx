@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect, memo, useRef, MouseEvent } from 'react';
-import { View, TriageResultData, BookingDetails, User } from '../types';
+import { useState, useEffect, memo } from 'react';
+import { View, User } from '../types';
 import { useTranslation } from 'react-i18next';
-import { BACKEND_URL } from '../constants';
 
 interface HomeProps {
   onNavigate: (view: View) => void;
-  onViewOfflineResult: (result: TriageResultData) => void;
+  onViewOfflineResult: () => void;
 }
 
 const Home = ({ onNavigate, onViewOfflineResult }: HomeProps) => {
@@ -26,7 +25,6 @@ const Home = ({ onNavigate, onViewOfflineResult }: HomeProps) => {
 
     const isPatient = user?.role === 'PATIENT';
     const isDoctor = user?.role === 'DOCTOR';
-    const isHospital = user?.role === 'HOSPITAL';
 
     return (
         <div className="flex flex-col gap-8">

@@ -17,6 +17,8 @@ const EMERGENCY_KEYWORDS = [
     'suicide', 'kill myself', 'passed out', 'choking'
 ];
 
+const CHAT_SESSION_KEY = 'symptomChatSession';
+
 const SymptomChecker = ({ onBack, onAnalysisComplete, onNavigate }: SymptomCheckerProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -26,6 +28,12 @@ const SymptomChecker = ({ onBack, onAnalysisComplete, onNavigate }: SymptomCheck
   const [isEmergency, setIsEmergency] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { t, i18n } = useTranslation();
+  const messagesRef = useRef(messages);
+  const chatHistoryRef = useRef(chatHistory);
+
+  // Keep refs in sync so the cleanup closure reads fresh values
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { chatHistoryRef.current = chatHistory; }, [chatHistory]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -33,7 +41,55 @@ const SymptomChecker = ({ onBack, onAnalysisComplete, onNavigate }: SymptomCheck
     }, 100);
   }, []);
 
+  // Persist session to sessionStorage on unmount
   useEffect(() => {
+    return () => {
+      if (messagesRef.current.length > 0) {
+        sessionStorage.setItem(CHAT_SESSION_KEY, JSON.stringify({
+          lang: i18n.language,
+          messages: messagesRef.current,
+          chatHistory: chatHistoryRef.current,
+        }));
+      }
+    };
+  }, [i18n.language]);
+
+  const clearSession = () => {
+    sessionStorage.removeItem(CHAT_SESSION_KEY);
+    setMessages([]);
+    setChatHistory([]);
+    setSuggestions([]);
+    // Re-trigger init by using a key prop trick isn't available here,
+    // so we just call init inline.
+    setIsLoading(true);
+    handleSymptomChat('Hello, start our medical triage session.', i18n.language).then(res => {
+      if (res.text) {
+        setMessages([{ sender: 'ai', text: res.text }]);
+        setChatHistory([{ role: 'model', parts: [{ text: res.text }] }]);
+      }
+      if (res.suggestions) setSuggestions(res.suggestions);
+    }).catch(() => {
+      setMessages([{ sender: 'ai', text: "I'm having trouble connecting. Please check your internet." }]);
+    }).finally(() => { setIsLoading(false); scrollToBottom(); });
+  };
+
+  useEffect(() => {
+    // Try to restore a saved session for the current language
+    const saved = sessionStorage.getItem(CHAT_SESSION_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.lang === i18n.language && parsed.messages?.length > 0) {
+          setMessages(parsed.messages);
+          setChatHistory(parsed.chatHistory || []);
+          setIsLoading(false);
+          scrollToBottom();
+          return; // Skip fresh AI greeting
+        }
+      } catch (_) { /* ignore parse errors */ }
+    }
+
+    // No valid saved session — start fresh
     setIsLoading(true);
     const initChat = async () => {
       try {
@@ -97,7 +153,12 @@ const SymptomChecker = ({ onBack, onAnalysisComplete, onNavigate }: SymptomCheck
         if (aiResponse.suggestions) setSuggestions(aiResponse.suggestions);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { sender: 'ai', text: "Service temporary unavailable. Please try again." }]);
+      const errMsg = error instanceof Error ? error.message : '';
+      const isRateLimit = errMsg.toLowerCase().includes('rate limit') || errMsg.toLowerCase().includes('too many');
+      const displayMsg = isRateLimit
+        ? `⏳ ${errMsg}` // Show the exact wait-time message from the server
+        : "Service temporarily unavailable. Please try again.";
+      setMessages(prev => [...prev, { sender: 'ai', text: displayMsg }]);
     } finally {
       setIsLoading(false);
       scrollToBottom();
@@ -151,9 +212,20 @@ const SymptomChecker = ({ onBack, onAnalysisComplete, onNavigate }: SymptomCheck
                  </div>
              </div>
          </div>
-         <button onClick={onBack} className="w-10 h-10 rounded-full bg-bg-tertiary/50 hover:bg-bg-tertiary flex items-center justify-center text-text-secondary transition-colors">
-             <i className="fas fa-times text-sm"></i>
-         </button>
+         <div className="flex items-center gap-2">
+             {messages.length > 1 && (
+                 <button
+                     onClick={clearSession}
+                     title="New Chat"
+                     className="w-9 h-9 rounded-full bg-bg-tertiary/50 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center text-text-secondary transition-colors text-xs"
+                 >
+                     <i className="fas fa-trash-alt"></i>
+                 </button>
+             )}
+             <button onClick={onBack} className="w-10 h-10 rounded-full bg-bg-tertiary/50 hover:bg-bg-tertiary flex items-center justify-center text-text-secondary transition-colors">
+                 <i className="fas fa-times text-sm"></i>
+             </button>
+         </div>
        </div>
 
       {/* Messages Area */}

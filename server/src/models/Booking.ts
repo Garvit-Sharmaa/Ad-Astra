@@ -15,6 +15,7 @@ export interface IBooking extends Document {
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   notes?: string;
   triageSummary?: string;
+  rescheduledAt?: string; // ISO timestamp of the last reschedule action
 }
 
 const bookingSchema = new Schema<IBooking>({
@@ -34,7 +35,8 @@ const bookingSchema = new Schema<IBooking>({
     default: 'PENDING' 
   },
   notes: { type: String, default: '' },
-  triageSummary: { type: String }
+  triageSummary: { type: String },
+  rescheduledAt: { type: String }, // ISO timestamp written by PATCH /reschedule
 });
 
 const Booking = model<IBooking>('Booking', bookingSchema);

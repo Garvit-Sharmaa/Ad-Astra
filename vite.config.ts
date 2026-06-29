@@ -35,14 +35,8 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-<<<<<<< HEAD
         target: 'http://localhost:3005', 
         changeOrigin: true,
-=======
-        // Updated to port 3004 based on user's server logs indicating the server started there.
-        target: 'http://localhost:3005', 
-        changeOrigin: true, // Recommended for virtual hosts
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
       },
     },
   },

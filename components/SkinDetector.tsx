@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { startSkinAnalysis, getSkinAnalysisConclusion } from '../services/geminiService';
 import { TriageResultData } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,32 @@ interface SkinDetectorProps {
 }
 
 type ComponentStep = 'upload' | 'mcq' | 'loading';
+
+// ---------------------------------------------------------------------------
+// Compress image via canvas before sending to server.
+// Resizes the longest dimension to MAX_DIM and re-encodes as JPEG.
+// Turns a 8MB raw photo into ~250KB — well within the 10mb body limit.
+// ---------------------------------------------------------------------------
+const MAX_DIM = 1024;
+const compressImage = (file: File): Promise<{ base64: string; mimeType: string }> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { width, height } = img;
+      const scale = Math.min(1, MAX_DIM / Math.max(width, height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
 
 const SkinDetector = ({ onBack, onAnalysisComplete }: SkinDetectorProps) => {
   const [image, setImage] = useState<string | null>(null);
@@ -50,17 +76,15 @@ const SkinDetector = ({ onBack, onAnalysisComplete }: SkinDetectorProps) => {
     setProgress(10);
     
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const base64 = (reader.result as string).split(',')[1];
-            setProgress(30);
-            const { description } = await startSkinAnalysis(base64, file.type);
-            setProgress(70);
-            const res = await getSkinAnalysisConclusion(description, mcqAnswers, i18n.language);
-            setProgress(100);
-            setTimeout(() => onAnalysisComplete(res), 500);
-        };
+        setProgress(25);
+        // Compress before upload: ~8MB mobile photo → ~250KB JPEG
+        const { base64, mimeType } = await compressImage(file);
+        setProgress(40);
+        const { description } = await startSkinAnalysis(base64, mimeType);
+        setProgress(75);
+        const res = await getSkinAnalysisConclusion(description, mcqAnswers, i18n.language);
+        setProgress(100);
+        setTimeout(() => onAnalysisComplete(res), 500);
     } catch (e) {
         setError(t('error_generic'));
         setStep('upload');
@@ -210,10 +234,10 @@ const SkinDetector = ({ onBack, onAnalysisComplete }: SkinDetectorProps) => {
                             disabled={!mcqAnswers.duration || !mcqAnswers.sensation}
                             className="btn-primary w-full py-5 text-xl shadow-2xl shadow-brand-blue/20"
                         >
-                            Start Medical Triage
+                            {t('analyze_btn') || 'Start Medical Triage'} <i className="fas fa-brain ml-2"></i>
                         </button>
                         <button onClick={() => setStep('upload')} className="btn-secondary w-full py-4">
-                            Back to Photo
+                            {t('back')}
                         </button>
                     </div>
                 </div>

@@ -5,6 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": ["vite/client"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -21,5 +22,6 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["."],
+  "exclude": ["server", "vite.config.ts", "vitest.setup.ts", "capacitor.config.ts", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

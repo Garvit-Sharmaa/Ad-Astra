@@ -48,6 +48,7 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
     const [activePatient, setActivePatient] = useState<BookingDetails | null>(null);
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [notesValue, setNotesValue] = useState('');
+    const [hospitalTab, setHospitalTab] = useState<'operations' | 'analytics'>('operations');
 
     // Sync the notes textarea whenever the selected patient changes
     useEffect(() => {
@@ -118,17 +119,17 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
     const renderPatientDashboard = () => (
         <div className="animate-fade-in space-y-6">
             <div className="grid grid-cols-2 gap-4">
-                <StatCard icon="fa-stethoscope" label="Total Triages" value={aiChecks} colorClass="bg-blue-600" />
-                <StatCard icon="fa-calendar-check" label="My Bookings" value={bookings.filter(b => b.status !== 'CANCELLED').length} colorClass="bg-emerald-600" />
+                <StatCard icon="fa-stethoscope" label={t('dash_total_triages')} value={aiChecks} colorClass="bg-blue-600" />
+                <StatCard icon="fa-calendar-check" label={t('dash_my_bookings')} value={bookings.filter(b => b.status !== 'CANCELLED').length} colorClass="bg-emerald-600" />
             </div>
             {activeQueue.length > 0 && (
                  <div className="card p-6 bg-gradient-to-br from-bg-secondary to-bg-tertiary border-brand-blue/10">
                     <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                        Next Appointment
+                        {t('dash_next_appointment')}
                     </h3>
                     <div className="flex items-center justify-between p-4 rounded-xl bg-bg-primary border border-border-pro">
                         <div>
-                            <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">Token Number</p>
+                            <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">{t('dash_token_number')}</p>
                             <p className="text-3xl font-mono font-black text-brand-blue-light">{activeQueue[0].token}</p>
                         </div>
                         <div className="text-right">
@@ -144,17 +145,17 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
     const renderDoctorDashboard = () => (
         <div className="animate-fade-in space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard icon="fa-user-clock" label="Awaiting" value={activeQueue.length} colorClass="bg-brand-blue" />
-                <StatCard icon="fa-check-circle" label="Served Today" value={completedQueue.length} colorClass="bg-emerald-600" />
-                <StatCard icon="fa-bolt" label="Urgent Cases" value={activeQueue.filter(b => b.triageSummary?.includes('SERIOUS')).length} colorClass="bg-red-500" />
-                <StatCard icon="fa-stethoscope" label="In Consultation" value={activeQueue.filter(b => b.status === 'IN_PROGRESS').length} colorClass="bg-orange-500" />
+                <StatCard icon="fa-user-clock" label={t('dash_awaiting')} value={activeQueue.length} colorClass="bg-brand-blue" />
+                <StatCard icon="fa-check-circle" label={t('dash_served_today')} value={completedQueue.length} colorClass="bg-emerald-600" />
+                <StatCard icon="fa-bolt" label={t('dash_urgent_cases')} value={activeQueue.filter(b => b.triageSummary?.includes('SERIOUS')).length} colorClass="bg-red-500" />
+                <StatCard icon="fa-stethoscope" label={t('dash_in_consultation')} value={activeQueue.filter(b => b.status === 'IN_PROGRESS').length} colorClass="bg-orange-500" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left Side: Queue */}
                 <div className="lg:col-span-5 card bg-bg-secondary border-t-4 border-t-brand-blue overflow-hidden flex flex-col max-h-[650px]">
                     <div className="p-4 border-b border-border-pro flex justify-between items-center bg-bg-tertiary/20">
-                        <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">Clinical Queue</h3>
+                        <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">{t('dash_clinical_queue')}</h3>
                         <span className="text-[10px] bg-brand-blue/20 text-brand-blue-light px-2 py-0.5 rounded-md font-bold">LIVE SYNC</span>
                     </div>
                     <div className="divide-y divide-border-pro overflow-y-auto custom-scrollbar flex-grow">
@@ -172,20 +173,20 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                         <p className="font-bold text-text-primary text-sm">{b.patientName}</p>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className={`text-[9px] font-black uppercase ${b.status === 'IN_PROGRESS' ? 'text-orange-500' : 'text-text-tertiary'}`}>
-                                                {b.status === 'IN_PROGRESS' ? '• In Progress' : b.time}
+                                                {b.status === 'IN_PROGRESS' ? `• ${t('dash_in_consultation')}` : b.time}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {b.triageSummary?.includes('SERIOUS') && (
-                                        <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded border border-red-500/20 uppercase">Critical</span>
+                                        <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded border border-red-500/20 uppercase">{t('dash_critical')}</span>
                                     )}
                                     <i className={`fas fa-chevron-right text-xs transition-transform ${activePatient?.token === b.token ? 'translate-x-1 text-brand-blue' : 'text-text-tertiary opacity-0 group-hover:opacity-100'}`}></i>
                                 </div>
                             </button>
                         )) : (
-                            <div className="p-20 text-center text-text-tertiary text-sm italic">No patients in queue.</div>
+                            <div className="p-20 text-center text-text-tertiary text-sm italic">{t('dash_no_patients')}</div>
                         )}
                     </div>
                 </div>
@@ -207,23 +208,23 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                             disabled={isUpdatingStatus}
                                             className="bg-bg-primary border border-border-pro text-xs font-bold text-text-primary rounded-lg px-3 py-2 outline-none focus:border-brand-blue transition-colors"
                                         >
-                                            <option value="PENDING">Awaiting</option>
-                                            <option value="IN_PROGRESS">In Consultation</option>
-                                            <option value="COMPLETED">Completed</option>
+                                            <option value="PENDING">{t('dash_status_awaiting')}</option>
+                                            <option value="IN_PROGRESS">{t('dash_status_in_progress')}</option>
+                                            <option value="COMPLETED">{t('dash_status_completed')}</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-3 bg-bg-primary rounded-xl border border-border-pro">
-                                        <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">Appointment</p>
+                                        <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">{t('dash_appointment')}</p>
                                         <p className="text-xs font-bold text-text-primary">{activePatient.date}</p>
                                         <p className="text-[10px] text-text-secondary">{activePatient.time}</p>
                                     </div>
                                     <div className="p-3 bg-bg-primary rounded-xl border border-border-pro">
-                                        <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">Contact</p>
+                                        <p className="text-[10px] font-black text-text-tertiary uppercase mb-1">{t('dash_contact')}</p>
                                         <p className="text-xs font-bold text-text-primary">+91 {activePatient.phone}</p>
-                                        <p className="text-[10px] text-text-secondary">Verified Mobile</p>
+                                        <p className="text-[10px] text-text-secondary">{t('dash_verified_mobile')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -231,19 +232,19 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                             <div className="p-6 flex-grow overflow-y-auto custom-scrollbar space-y-6">
                                 <div>
                                     <h4 className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                        <i className="fas fa-robot text-brand-blue-light"></i> AI Triage Summary
+                                        <i className="fas fa-robot text-brand-blue-light"></i> {t('dash_ai_summary')}
                                     </h4>
                                     <div className="p-4 rounded-2xl bg-bg-primary border border-border-pro border-l-4 border-l-brand-blue text-sm leading-relaxed text-text-secondary italic">
-                                        {activePatient.triageSummary || "No AI analysis was performed for this manual booking."}
+                                        {activePatient.triageSummary || t('dash_no_ai_summary')}
                                     </div>
                                 </div>
 
                                 <div>
                                     <h4 className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                        <i className="fas fa-history text-orange-500"></i> Patient Notes / History
+                                        <i className="fas fa-history text-orange-500"></i> {t('dash_patient_notes')}
                                     </h4>
                                     <textarea 
-                                        placeholder="Add clinical observations or medication notes here..."
+                                        placeholder={t('dash_notes_placeholder')}
                                         value={notesValue}
                                         onChange={(e) => setNotesValue(e.target.value)}
                                         onBlur={() => handleUpdateStatus(
@@ -261,7 +262,7 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                     onClick={() => handleUpdateStatus(activePatient.token, 'COMPLETED')}
                                     className="flex-grow btn-primary py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 !bg-emerald-600 border-none"
                                 >
-                                    <i className="fas fa-check-double"></i> Finalize Session
+                                    <i className="fas fa-check-double"></i> {t('dash_finalize')}
                                 </button>
                                 <button className="w-12 h-12 rounded-xl bg-bg-primary border border-border-pro flex items-center justify-center text-text-tertiary hover:text-brand-blue transition-colors">
                                     <i className="fas fa-print"></i>
@@ -273,8 +274,8 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                             <div className="w-20 h-20 rounded-full bg-bg-tertiary flex items-center justify-center mb-4 text-3xl">
                                 <i className="fas fa-stethoscope"></i>
                             </div>
-                            <h3 className="font-bold text-text-primary text-lg">Clinical Workbench</h3>
-                            <p className="text-sm max-w-xs mt-1">Select a patient from the queue to start a consultation and review their AI triage history.</p>
+                            <h3 className="font-bold text-text-primary text-lg">{t('dash_workbench_title')}</h3>
+                            <p className="text-sm max-w-xs mt-1">{t('dash_workbench_desc')}</p>
                         </div>
                     )}
                 </div>
@@ -282,20 +283,72 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
         </div>
     );
 
-    const renderHospitalDashboard = () => (
+    const renderHospitalDashboard = () => {
+        // ── Analytics computations (pure derived data, no extra fetch) ──
+        const activeQueue = bookings.filter(b => b.status === 'PENDING' || b.status === 'IN_PROGRESS');
+        const totalBookings = bookings.length;
+        const statusCounts = {
+            PENDING:     bookings.filter(b => (b.status || 'PENDING') === 'PENDING').length,
+            IN_PROGRESS: bookings.filter(b => b.status === 'IN_PROGRESS').length,
+            COMPLETED:   bookings.filter(b => b.status === 'COMPLETED').length,
+            CANCELLED:   bookings.filter(b => b.status === 'CANCELLED').length,
+        };
+        const seriousCount = bookings.filter(b => b.triageSummary?.includes('SERIOUS')).length;
+        const mildCount    = bookings.filter(b => b.triageSummary && !b.triageSummary.includes('SERIOUS')).length;
+        const triageTotal  = seriousCount + mildCount || 1;
+        const doctorLoad   = doctors.map(d => ({
+            name: d.name.replace('Dr. ', ''),
+            count: bookings.filter(b => b.doctorName === d.name).length,
+        })).sort((a, b) => b.count - a.count);
+        const maxLoad = Math.max(...doctorLoad.map(d => d.count), 1);
+
+        const BarSegment = ({ pct, color, label, count }: { pct: number; color: string; label: string; count: number }) => (
+            <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-text-tertiary uppercase">
+                    <span>{label}</span><span>{count}</span>
+                </div>
+                <div className="h-2 bg-bg-tertiary rounded-full overflow-hidden">
+                    <div
+                        className={`h-full rounded-full transition-all duration-700 ${color}`}
+                        style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                </div>
+            </div>
+        );
+
+        return (
         <div className="animate-fade-in space-y-6">
+            {/* KPI Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard icon="fa-user-md" label="On-Duty" value={doctors.filter(d => d.isOnline).length} colorClass="bg-emerald-600" />
-                <StatCard icon="fa-users" label="Live Load" value={activeQueue.length} colorClass="bg-brand-blue" />
-                <StatCard icon="fa-heart" label="Feedback" value={feedbacks.length} colorClass="bg-pink-500" />
-                <StatCard icon="fa-clock" label="Efficiency" value="98%" colorClass="bg-indigo-600" />
+                <StatCard icon="fa-user-md" label={t('dash_on_duty')} value={doctors.filter(d => d.isOnline).length} colorClass="bg-emerald-600" />
+                <StatCard icon="fa-users" label={t('dash_live_load')} value={activeQueue.length} colorClass="bg-brand-blue" />
+                <StatCard icon="fa-heart" label={t('dash_feedback_count')} value={feedbacks.length} colorClass="bg-pink-500" />
+                <StatCard icon="fa-clock" label={t('dash_efficiency')} value="98%" colorClass="bg-indigo-600" />
             </div>
 
+            {/* Tab Switcher */}
+            <div className="flex gap-1 p-1 bg-bg-tertiary/30 rounded-xl border border-border-pro w-fit">
+                {(['operations', 'analytics'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setHospitalTab(tab)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+                            hospitalTab === tab
+                                ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20'
+                                : 'text-text-tertiary hover:text-text-primary'
+                        }`}
+                    >
+                        {tab === 'operations' ? '⚡ Operations' : '📊 Analytics'}
+                    </button>
+                ))}
+            </div>
+
+            {hospitalTab === 'operations' ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Staff Control Panel */}
                 <div className="card bg-bg-secondary border-t-4 border-t-emerald-500">
                     <div className="p-4 border-b border-border-pro bg-bg-tertiary/20">
-                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">Staff Roster</h3>
+                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">{t('dash_staff_roster')}</h3>
                     </div>
                     <div className="divide-y divide-border-pro max-h-[400px] overflow-y-auto custom-scrollbar">
                         {doctors.map(doc => (
@@ -306,7 +359,7 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                     </div>
                                     <div>
                                         <p className="font-bold text-text-primary text-xs">{doc.name}</p>
-                                        <p className="text-[9px] text-text-tertiary uppercase">{doc.isOnline ? 'Active' : 'Offline'}</p>
+                                        <p className="text-[9px] text-text-tertiary uppercase">{doc.isOnline ? t('dash_status_in_progress').split(' ')[0] : 'Offline'}</p>
                                     </div>
                                 </div>
                                 <span className={`w-2 h-2 rounded-full ${doc.isOnline ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-text-tertiary'}`}></span>
@@ -318,17 +371,17 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                 {/* Facility Queue Flow */}
                 <div className="card bg-bg-secondary border-t-4 border-t-brand-blue lg:col-span-2">
                     <div className="p-4 border-b border-border-pro bg-bg-tertiary/20 flex justify-between items-center">
-                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">Global Facility Queue</h3>
+                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">{t('dash_facility_queue')}</h3>
                          <button className="text-[10px] font-bold text-brand-blue-light hover:underline">EXPORT LOGS</button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-bg-tertiary/30 text-[10px] font-black text-text-tertiary uppercase tracking-widest">
                                 <tr>
-                                    <th className="px-4 py-3">Token</th>
-                                    <th className="px-4 py-3">Patient</th>
-                                    <th className="px-4 py-3">Assigned Provider</th>
-                                    <th className="px-4 py-3">Status</th>
+                                    <th className="px-4 py-3">{t('dash_col_token')}</th>
+                                    <th className="px-4 py-3">{t('dash_col_patient')}</th>
+                                    <th className="px-4 py-3">{t('dash_col_provider')}</th>
+                                    <th className="px-4 py-3">{t('dash_col_status')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border-pro">
@@ -336,7 +389,7 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                     <tr key={b.token} className="hover:bg-bg-tertiary/20 transition-colors">
                                         <td className="px-4 py-3 font-mono text-xs text-brand-blue-light">{b.token}</td>
                                         <td className="px-4 py-3 text-xs font-bold text-text-primary">{b.patientName}</td>
-                                        <td className="px-4 py-3 text-xs text-text-secondary">{b.doctorName || 'General Triage'}</td>
+                                        <td className="px-4 py-3 text-xs text-text-secondary">{b.doctorName || t('dash_general_triage')}</td>
                                         <td className="px-4 py-3">
                                             <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
                                                 b.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' :
@@ -350,14 +403,14 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                                 ))}
                             </tbody>
                         </table>
-                        {bookings.length === 0 && <div className="p-10 text-center text-xs text-text-tertiary italic">No active facility load detected.</div>}
+                        {bookings.length === 0 && <div className="p-10 text-center text-xs text-text-tertiary italic">{t('dash_no_facility_load')}</div>}
                     </div>
                 </div>
 
                 {/* Patient Voice Stream */}
                 <div className="card bg-bg-secondary border-t-4 border-t-pink-500 lg:col-span-3">
                     <div className="p-4 border-b border-border-pro bg-bg-tertiary/20">
-                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">Patient Experience Stream</h3>
+                         <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">{t('dash_experience_stream')}</h3>
                     </div>
                     <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 max-h-[250px] overflow-y-auto custom-scrollbar">
                         {feedbacks.map(f => (
@@ -372,10 +425,87 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                     </div>
                 </div>
             </div>
-        </div>
-    );
+            ) : (
+            // ── ANALYTICS TAB ────────────────────────────────────────────────────────
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    if (isLoading) return <div className="flex flex-col items-center justify-center py-32 gap-6"><LoadingSpinner /><p className="text-text-tertiary font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Syncing Control Center...</p></div>;
+                {/* Appointment Status Breakdown */}
+                <div className="card bg-bg-secondary p-6 space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">Appointment Status</h3>
+                        <span className="text-[10px] bg-bg-tertiary px-2 py-1 rounded-md font-bold text-text-tertiary">{totalBookings} TOTAL</span>
+                    </div>
+                    <BarSegment pct={(statusCounts.PENDING / totalBookings) * 100}     color="bg-brand-blue"    label="Pending"     count={statusCounts.PENDING} />
+                    <BarSegment pct={(statusCounts.IN_PROGRESS / totalBookings) * 100} color="bg-orange-500"  label="In Progress" count={statusCounts.IN_PROGRESS} />
+                    <BarSegment pct={(statusCounts.COMPLETED / totalBookings) * 100}   color="bg-emerald-500" label="Completed"   count={statusCounts.COMPLETED} />
+                    <BarSegment pct={(statusCounts.CANCELLED / totalBookings) * 100}   color="bg-red-400"     label="Cancelled"  count={statusCounts.CANCELLED} />
+                </div>
+
+                {/* Triage Severity Ratio */}
+                <div className="card bg-bg-secondary p-6 space-y-4">
+                    <h3 className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Triage Severity</h3>
+                    <div className="flex items-center gap-4">
+                        <div className="text-center flex-1">
+                            <p className="text-4xl font-black text-red-400">{seriousCount}</p>
+                            <p className="text-[10px] font-bold text-text-tertiary uppercase mt-1">Serious / Urgent</p>
+                        </div>
+                        <div className="text-center flex-1">
+                            <p className="text-4xl font-black text-emerald-400">{mildCount}</p>
+                            <p className="text-[10px] font-bold text-text-tertiary uppercase mt-1">Mild / Routine</p>
+                        </div>
+                    </div>
+                    <div className="h-3 bg-bg-tertiary rounded-full overflow-hidden flex">
+                        <div className="bg-red-400 h-full transition-all duration-700" style={{ width: `${(seriousCount / triageTotal) * 100}%` }} />
+                        <div className="bg-emerald-400 h-full transition-all duration-700 flex-1" />
+                    </div>
+                    <p className="text-[10px] text-text-tertiary text-center">
+                        {triageTotal} AI-triaged cases • {seriousCount > 0 ? Math.round((seriousCount / triageTotal) * 100) : 0}% flagged urgent
+                    </p>
+                </div>
+
+                {/* Doctor Workload */}
+                <div className="card bg-bg-secondary p-6 space-y-4 md:col-span-2">
+                    <h3 className="font-black text-xs uppercase tracking-widest text-text-primary mb-2">Doctor Workload Distribution</h3>
+                    {doctorLoad.length === 0 ? (
+                        <p className="text-text-tertiary text-xs italic text-center py-4">No doctor assignment data yet.</p>
+                    ) : (
+                        doctorLoad.map(d => (
+                            <div key={d.name} className="space-y-1">
+                                <div className="flex justify-between text-xs font-bold text-text-secondary">
+                                    <span>{d.name}</span>
+                                    <span className="font-mono text-brand-blue-light">{d.count} appts</span>
+                                </div>
+                                <div className="h-2.5 bg-bg-tertiary rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-brand-blue to-cyan-500 rounded-full transition-all duration-700"
+                                        style={{ width: `${(d.count / maxLoad) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Feedback Volume */}
+                <div className="card bg-bg-secondary p-6 md:col-span-2">
+                    <h3 className="font-black text-xs uppercase tracking-widest text-text-primary mb-4">Patient Experience Stream</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[200px] overflow-y-auto custom-scrollbar">
+                        {feedbacks.length === 0 ? (
+                            <p className="text-text-tertiary text-xs italic">No feedback collected yet.</p>
+                        ) : feedbacks.map(f => (
+                            <div key={f._id} className="p-3 rounded-xl bg-bg-primary border border-border-pro">
+                                <p className="text-[11px] text-text-secondary italic line-clamp-3">"{f.feedback}"</p>
+                                <p className="text-[9px] font-black text-brand-blue-light uppercase mt-2">ID: {f.userPhone.slice(-4)} • {new Date(f.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            )}
+        </div>
+    );};
+
+    if (isLoading) return <div className="flex flex-col items-center justify-center py-32 gap-6"><LoadingSpinner /><p className="text-text-tertiary font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">{t('dash_syncing')}</p></div>;
 
     return (
         <div className="max-w-6xl mx-auto pb-10">
@@ -384,11 +514,11 @@ const Dashboard = ({ user, onBack, onNavigate }: DashboardProps) => {
                     <div className="flex items-center gap-3 mb-1">
                         <span className={`w-2 h-2 rounded-full ${user.role === 'PATIENT' ? 'bg-blue-500' : user.role === 'DOCTOR' ? 'bg-emerald-500' : 'bg-indigo-500'}`}></span>
                         <p className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.2em]">
-                            {user.role === 'PATIENT' ? 'Member Access' : 'Encrypted Professional Portal'}
+                            {user.role === 'PATIENT' ? t('dash_member_access') : t('dash_professional_portal')}
                         </p>
                     </div>
                     <h2 className="text-3xl font-black text-text-primary tracking-tight">
-                        {user.role === 'PATIENT' ? 'Patient Portal' : user.role === 'DOCTOR' ? 'Clinical Console' : 'Facility Admin'}
+                        {user.role === 'PATIENT' ? t('dash_patient_portal') : user.role === 'DOCTOR' ? t('dash_clinical_console') : t('dash_facility_admin')}
                     </h2>
                     <p className="text-brand-blue-light font-bold text-xs mt-0.5">{user.hospitalName || 'National Health Sync'}</p>
                 </div>

@@ -1,15 +1,17 @@
 
 // ---------------------------------------------------------------------------
-// 🚀 FORCE REMOTE CONNECTION
-// We are hardcoding this to ensure the APK absolutely connects to Ngrok.
+// 🔧 ENVIRONMENT-AWARE BACKEND URL
+// Reads from Vite env var in production/staging, falls back to local server.
+//
+// How to configure:
+//   - Local dev:      Set VITE_BACKEND_URL in .env.local (or leave unset for localhost)
+//   - Ngrok tunnel:   VITE_BACKEND_URL=https://your-tunnel.ngrok-free.app
+//   - Vercel deploy:  Set VITE_BACKEND_URL in Vercel dashboard environment variables
+//   - Render deploy:  Set VITE_BACKEND_URL in Render dashboard environment variables
 // ---------------------------------------------------------------------------
 
-// RENAMED VARIABLE TO BREAK CACHE
-export const BACKEND_URL = 'https://furlable-june-geniculately.ngrok-free.dev';
-
-// NOTE: If you want to switch back to local development later, uncomment this:
-// const LOCAL_IP = '127.0.0.1'; 
-// export const BACKEND_URL = `http://${LOCAL_IP}:3005`;
+export const BACKEND_URL: string =
+  (import.meta.env.VITE_BACKEND_URL as string) || 'http://localhost:3005';
 
 export const LANGUAGES = [
   { code: 'en', name: 'English', icon: '🇬🇧' },

@@ -67,6 +67,7 @@ const Booking = ({ user, onBack, onBookingComplete, theme, suggestedSpecialty }:
     const [isDetectingLocation, setIsDetectingLocation] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [animationClass, setAnimationClass] = useState('animate-slide-in-right');
+    const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
     
     const mapRef = useRef<L.Map | null>(null);
     const markersRef = useRef<Record<string, L.Marker>>({});
@@ -241,8 +242,9 @@ const Booking = ({ user, onBack, onBookingComplete, theme, suggestedSpecialty }:
             setError(t('error_hospital_date_time'));
             return;
         }
-        setError(''); 
+        setError('');
         isSubmitting.current = true;
+        setIsSubmittingBooking(true);
         setStep('loading');
 
         const details: BookingDetails = {
@@ -259,10 +261,14 @@ const Booking = ({ user, onBack, onBookingComplete, theme, suggestedSpecialty }:
         try {
             await onBookingComplete(details);
         } catch(err) {
-            setError(err instanceof Error ? err.message : t('error_server_connect'));
-            changeStep('confirm', 'backward'); 
+            // Detect 429 rate-limit responses and show a friendly message
+            const msg = err instanceof Error ? err.message : t('error_server_connect');
+            const isRateLimit = msg.includes('429') || msg.toLowerCase().includes('too many');
+            setError(isRateLimit ? (t('error_rate_limit') || 'Too many requests — please wait a moment and try again.') : msg);
+            changeStep('confirm', 'backward');
         } finally {
             isSubmitting.current = false;
+            setIsSubmittingBooking(false);
         }
     }
     
@@ -574,8 +580,19 @@ const Booking = ({ user, onBack, onBookingComplete, theme, suggestedSpecialty }:
                          <p className="text-text-tertiary text-center text-xs px-6">{t('otp_prompt', { phone: phone })}</p>
                         
                         <div className="flex flex-col space-y-3">
-                            <button type="submit" className="btn-primary w-full py-4 text-lg shadow-lg shadow-brand-blue/30">
-                                {error ? <><i className="fas fa-redo mr-2"></i>{t('retry_booking')}</> : t('confirm_booking')}
+                            <button 
+                                type="submit" 
+                                disabled={isSubmittingBooking}
+                                className="btn-primary w-full py-4 text-lg shadow-lg shadow-brand-blue/30 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+                            >
+                                {isSubmittingBooking ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>{t('confirming_appointment') || 'Confirming...'}</span>
+                                    </>
+                                ) : (
+                                    error ? <><i className="fas fa-redo mr-2"></i>{t('retry_booking')}</> : t('confirm_booking')
+                                )}
                             </button>
                             <button type="button" onClick={() => {setError(''); changeStep('slot', 'backward'); }} className="btn-secondary w-full">{t('back')}</button>
                         </div>

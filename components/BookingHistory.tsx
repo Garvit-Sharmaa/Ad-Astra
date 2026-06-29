@@ -1,11 +1,23 @@
-
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { BookingDetails } from '../types';
 import { useTranslation } from 'react-i18next';
 import { BACKEND_URL } from '../constants'; 
 import LoadingSpinner from './LoadingSpinner';
 
 const HISTORY_CACHE_KEY = 'bookingHistoryCache';
+const TIME_SLOTS = [
+    '10:00 AM - 11:00 AM',
+    '11:00 AM - 12:00 PM',
+    '02:00 PM - 03:00 PM',
+    '03:00 PM - 04:00 PM',
+];
+
+const getDaysAhead = (n: number): Date[] =>
+    Array.from({ length: n }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() + i + 1);
+        return d;
+    });
 
 const isUpcoming = (dateString: string): boolean => {
   if (!dateString) return false;
@@ -20,14 +32,18 @@ interface HistoryItemProps {
   tokenLabel: string;
   isUpcoming: boolean;
   onCancel: () => void;
+  onReschedule: () => void;
 }
 
-const HistoryItem = memo(({ booking, tokenLabel, isUpcoming, onCancel }: HistoryItemProps) => {
+const HistoryItem = memo(({ booking, tokenLabel, isUpcoming, onCancel, onReschedule }: HistoryItemProps) => {
     const { t } = useTranslation();
+    const isCancelled = booking.status === 'CANCELLED';
     return (
         <div className="glow-card card rounded-3xl p-6 w-full text-left space-y-5 animate-fade-scale-in relative group overflow-hidden bg-bg-secondary">
             {/* Status Indicator Stripe */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isUpcoming ? 'bg-brand-success' : 'bg-text-tertiary'}`}></div>
+            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                isCancelled ? 'bg-red-500' : isUpcoming ? 'bg-emerald-500' : 'bg-text-tertiary'
+            }`}></div>
             
             <div className="flex justify-between items-start gap-4 pl-2">
                 <div>
@@ -38,8 +54,12 @@ const HistoryItem = memo(({ booking, tokenLabel, isUpcoming, onCancel }: History
                     </p>
                 </div>
                 <div className="flex flex-col items-end">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mb-2 ${isUpcoming ? 'bg-green-500/10 text-green-500' : 'bg-gray-500/10 text-gray-500'}`}>
-                        {isUpcoming ? 'Upcoming' : 'Completed'}
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mb-2 ${
+                        isCancelled ? 'bg-red-500/10 text-red-400' :
+                        isUpcoming ? 'bg-emerald-500/10 text-emerald-500' : 
+                        'bg-gray-500/10 text-gray-500'
+                    }`}>
+                        {isCancelled ? t('cancelled') : isUpcoming ? t('upcoming') : t('completed')}
                     </span>
                     <div className="text-center bg-bg-tertiary px-3 py-2 rounded-xl border border-border-primary">
                         <p className="text-[10px] text-text-tertiary font-bold tracking-wider uppercase mb-0.5">{tokenLabel}</p>
@@ -52,7 +72,7 @@ const HistoryItem = memo(({ booking, tokenLabel, isUpcoming, onCancel }: History
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border-primary">
                     <div className="w-8 h-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue-light"><i className="fas fa-calendar-alt"></i></div>
                     <div>
-                        <p className="text-xs text-text-secondary font-semibold">Date & Time</p>
+                        <p className="text-xs text-text-secondary font-semibold">{t('date_time_label')}</p>
                         <p className="text-sm font-bold text-text-primary">{booking.date}</p>
                         <p className="text-xs text-text-primary">{booking.time}</p>
                     </div>
@@ -60,15 +80,34 @@ const HistoryItem = memo(({ booking, tokenLabel, isUpcoming, onCancel }: History
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary border border-border-primary">
                     <div className="w-8 h-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue-light"><i className="fas fa-user"></i></div>
                     <div>
-                        <p className="text-xs text-text-secondary font-semibold">Patient</p>
+                        <p className="text-xs text-text-secondary font-semibold">{t('patient_name')}</p>
                         <p className="text-sm font-bold text-text-primary truncate">{booking.patientName}</p>
                         {booking.doctorName && <p className="text-xs text-text-secondary truncate">Dr. {booking.doctorName}</p>}
                     </div>
                 </div>
             </div>
 
-            {isUpcoming && (
-                <div className="pl-2 pt-2">
+            {/* Triage summary badge if available */}
+            {(booking as any).triageSummary && (
+                <div className="pl-2">
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-brand-blue/5 border border-brand-blue/10">
+                        <i className="fas fa-robot text-brand-blue-light mt-0.5 text-xs flex-shrink-0"></i>
+                        <p className="text-xs text-text-secondary leading-relaxed line-clamp-2 italic">
+                            {(booking as any).triageSummary}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {isUpcoming && !isCancelled && (
+                <div className="pl-2 pt-2 flex flex-col gap-2">
+                    <button
+                        onClick={onReschedule}
+                        className="w-full py-3 rounded-xl border border-brand-blue/30 text-brand-blue-light bg-brand-blue/5 font-semibold hover:bg-brand-blue/10 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                        <i className="fas fa-calendar-edit"></i>
+                        {t('reschedule_appointment') || 'Reschedule'}
+                    </button>
                     <button 
                         onClick={onCancel}
                         className="w-full py-3 rounded-xl border border-red-500/30 text-red-500 bg-red-500/5 font-semibold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2 text-sm"
@@ -89,8 +128,14 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<BookingDetails | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState<BookingDetails | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
-  const { t } = useTranslation();
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleError, setRescheduleError] = useState('');
+  const { t, i18n } = useTranslation();
+  const availableDays = getDaysAhead(7);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -149,10 +194,8 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
   
   const handleConfirmCancel = async () => {
       if (!showCancelModal) return;
-
       setIsCancelling(true);
       setError(null);
-
       try {
           const authToken = localStorage.getItem('healthAppToken');
           const response = await fetch(`${BACKEND_URL}/api/bookings/${showCancelModal.token}`, {
@@ -162,18 +205,15 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
                   'ngrok-skip-browser-warning': 'true' 
               }
           });
-
           if (!response.ok) {
               const errorData = await response.json();
               throw new Error(errorData.message || 'Failed to cancel booking.');
           }
-          
           const updatedBookings = bookings.map(b =>
               b.token === showCancelModal.token ? { ...b, status: 'CANCELLED' as const } : b
           );
           setBookings(updatedBookings);
           localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updatedBookings));
-
       } catch (err: any) {
           setError(err.message || t('error_server_connect'));
       } finally {
@@ -181,6 +221,50 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
           setShowCancelModal(null);
       }
   };
+
+  // --- L3: Reschedule handler ---
+  const handleConfirmReschedule = useCallback(async () => {
+      if (!showRescheduleModal || !rescheduleDate || !rescheduleTime) {
+          setRescheduleError(t('error_hospital_date_time') || 'Please select a new date and time.');
+          return;
+      }
+      setIsRescheduling(true);
+      setRescheduleError('');
+      try {
+          const authToken = localStorage.getItem('healthAppToken');
+          const newDate = rescheduleDate.toLocaleDateString(i18n.language, {
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+          });
+          const response = await fetch(`${BACKEND_URL}/api/bookings/${showRescheduleModal.token}/reschedule`, {
+              method: 'PATCH',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${authToken}`,
+                  'ngrok-skip-browser-warning': 'true',
+              },
+              body: JSON.stringify({ date: newDate, time: rescheduleTime }),
+          });
+          if (!response.ok) {
+              const errData = await response.json();
+              throw new Error(errData.message || 'Failed to reschedule.');
+          }
+          const updated = await response.json();
+          const updatedBookings = bookings.map(b =>
+              b.token === showRescheduleModal.token
+                  ? { ...b, date: updated.date, time: updated.time, status: 'PENDING' as const }
+                  : b
+          );
+          setBookings(updatedBookings);
+          localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updatedBookings));
+          setShowRescheduleModal(null);
+          setRescheduleDate(null);
+          setRescheduleTime('');
+      } catch (err: any) {
+          setRescheduleError(err.message || t('error_server_connect'));
+      } finally {
+          setIsRescheduling(false);
+      }
+  }, [showRescheduleModal, rescheduleDate, rescheduleTime, bookings, t, i18n.language]);
 
 
   return (
@@ -209,8 +293,14 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
                 key={`${booking.token}-${index}`} 
                 booking={booking} 
                 tokenLabel={t('token')} 
-                isUpcoming={isUpcoming(booking.date)}
+                isUpcoming={isUpcoming(booking.date) && booking.status !== 'CANCELLED'}
                 onCancel={() => setShowCancelModal(booking)}
+                onReschedule={() => {
+                    setShowRescheduleModal(booking);
+                    setRescheduleDate(null);
+                    setRescheduleTime('');
+                    setRescheduleError('');
+                }}
               />
             ))
           ) : (
@@ -227,6 +317,7 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
           {t('back_to_home')}
       </button>
       </div>
+       {/* ── Cancel Modal ─────────────────────────────────────────── */}
        {showCancelModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
                 <div className="card rounded-[2rem] p-8 max-w-md w-full text-center animate-fade-in-up bg-bg-secondary border border-border-primary shadow-2xl">
@@ -245,6 +336,113 @@ const BookingHistory = ({ onBack }: { onBack: () => void; }) => {
                         </button>
                         <button onClick={() => setShowCancelModal(null)} disabled={isCancelling} className="btn-secondary py-3.5">
                             {t('no_keep')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ── Reschedule Modal ─────────────────────────────────────── */}
+        {showRescheduleModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+                <div className="card rounded-[2rem] p-6 sm:p-8 max-w-md w-full animate-fade-in-up bg-bg-secondary border border-border-primary shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-bold text-text-primary">
+                                {t('reschedule_appointment') || 'Reschedule Appointment'}
+                            </h3>
+                            <p className="text-xs text-text-tertiary mt-1">{showRescheduleModal.hospital.split(',')[0]}</p>
+                        </div>
+                        <button
+                            onClick={() => setShowRescheduleModal(null)}
+                            className="w-9 h-9 rounded-xl bg-bg-tertiary/50 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+                        >
+                            <i className="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+
+                    {/* Current Appointment Info */}
+                    <div className="p-3 rounded-xl bg-bg-primary border border-border-primary">
+                        <p className="text-[10px] font-black text-text-tertiary uppercase tracking-wider mb-1">Current Slot</p>
+                        <p className="text-sm font-bold text-text-primary">{showRescheduleModal.date}</p>
+                        <p className="text-xs text-text-secondary">{showRescheduleModal.time}</p>
+                    </div>
+
+                    {/* Date Picker Strip */}
+                    <div>
+                        <p className="text-xs font-black text-text-tertiary uppercase tracking-widest mb-3">Select New Date</p>
+                        <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                            {availableDays.map((day) => {
+                                const isSelected = rescheduleDate?.toDateString() === day.toDateString();
+                                return (
+                                    <button
+                                        key={day.toISOString()}
+                                        onClick={() => setRescheduleDate(day)}
+                                        className={`flex-shrink-0 flex flex-col items-center px-4 py-3 rounded-2xl border-2 transition-all ${
+                                            isSelected
+                                                ? 'bg-brand-blue border-brand-blue text-white shadow-lg shadow-brand-blue/20'
+                                                : 'bg-bg-primary border-border-primary hover:border-brand-blue/40 text-text-primary'
+                                        }`}
+                                    >
+                                        <span className="text-[10px] font-bold uppercase opacity-70">
+                                            {day.toLocaleDateString(i18n.language, { weekday: 'short' })}
+                                        </span>
+                                        <span className="text-xl font-black mt-0.5">
+                                            {day.getDate()}
+                                        </span>
+                                        <span className="text-[9px] opacity-60">
+                                            {day.toLocaleDateString(i18n.language, { month: 'short' })}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Time Slot Picker */}
+                    <div>
+                        <p className="text-xs font-black text-text-tertiary uppercase tracking-widest mb-3">Select New Time</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {TIME_SLOTS.map((slot) => (
+                                <button
+                                    key={slot}
+                                    onClick={() => setRescheduleTime(slot)}
+                                    className={`p-3 rounded-xl border text-sm font-semibold transition-all ${
+                                        rescheduleTime === slot
+                                            ? 'bg-brand-blue border-brand-blue text-white shadow-lg'
+                                            : 'bg-bg-primary border-border-primary hover:border-brand-blue/40 text-text-primary'
+                                    }`}
+                                >
+                                    {slot}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {rescheduleError && (
+                        <p className="text-red-400 text-sm text-center">
+                            <i className="fas fa-exclamation-circle mr-1"></i>{rescheduleError}
+                        </p>
+                    )}
+
+                    <div className="flex flex-col gap-3">
+                        <button
+                            onClick={handleConfirmReschedule}
+                            disabled={isRescheduling || !rescheduleDate || !rescheduleTime}
+                            className="w-full btn-primary py-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isRescheduling ? (
+                                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</>
+                            ) : (
+                                <><i className="fas fa-calendar-check"></i> Confirm Reschedule</>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setShowRescheduleModal(null)}
+                            className="btn-secondary w-full py-3"
+                        >
+                            {t('back')}
                         </button>
                     </div>
                 </div>
