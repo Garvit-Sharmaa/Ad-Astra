@@ -1,238 +1,132 @@
-<<<<<<< HEAD
-=======
+# Ad Astra — AI-Driven Clinical Triage & Facility Management Platform
+
 <div align="center">
+  <img src="https://img.shields.io/badge/Status-Production%20Ready-success" alt="Status" />
+  <img src="https://img.shields.io/badge/Architecture-Offline--First%20PWA-blue" alt="Architecture" />
+  <img src="https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-green" alt="Backend" />
+  <img src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blueviolet" alt="Frontend" />
+  <img src="https://img.shields.io/badge/AI-Google%20Gemini%202.0-orange" alt="AI Engine" />
 </div>
 
-Ad Astra – AI-Based Medical Triage Web App
+## 📌 Executive Summary
 
-Ad Astra is a full-stack health assistance web application that helps users quickly understand their health condition using AI. It allows users to analyze symptoms, detect skin conditions from images, check medical urgency, and even book doctor appointments.
+**Ad Astra** is a production-grade, full-stack medical triage application engineered to bridge the healthcare accessibility gap in low-resource and low-connectivity environments. 
 
-This project is built as a real-world prototype, not just a college demo. It focuses on clean architecture, security, performance, offline support, and practical usability.
+Rather than a simple symptom-checker, Ad Astra operates as a **Clinical Triage Pipeline**. It leverages Google's Gemini 2.0 Flash vision and language models to analyze visual (dermatological) and conversational (symptom-based) data. The system categorizes case severity, offers immediate first-aid/self-care guidance, and integrates directly into a localized hospital queue management system for both patients and medical staff.
 
-⚠️ Disclaimer:
-This application is for educational and informational purposes only. It does not replace professional medical advice, diagnosis, or treatment.
+**Core Directives:**
+1. **Resilience:** Offline-first architecture ensures users can log symptoms without an active internet connection. Data syncs automatically upon reconnection.
+2. **Accessibility:** Full i18n support across 9 regional languages with dynamic routing.
+3. **Security:** Hardened backend with rate-limiting, JWT-based RBAC (Patient, Doctor, Hospital Admin), and strict CORS constraints.
 
+---
 
+## 🏗️ System Architecture
 
-What This App Can Do
+Ad Astra follows a decoupled, client-server architecture with an asynchronous AI processing queue.
 
-Analyze user symptoms using AI
+```mermaid
+graph TD
+    Client[React PWA] -->|REST API / JWT Auth| Server[Express.js Node Backend]
+    Server -->|Mongoose ODM| DB[(MongoDB Atlas)]
+    Server <-->|Prompt Eng. & Vision API| Gemini[Google Gemini 2.0 API]
+    
+    subgraph Client [Frontend (Offline-First)]
+        UI[UI Components]
+        State[Local State]
+        Storage[LocalStorage / Queue]
+        UI <--> State
+        State <--> Storage
+    end
+    
+    subgraph Backend [Server (Stateless)]
+        Auth[Auth & Rate Limiting]
+        Controllers[API Controllers]
+        AI[AI Orchestration]
+        Auth --> Controllers
+        Controllers --> AI
+    end
+```
 
-Detect possible skin diseases from images
+---
 
-Classify the case as Mild or Serious
+## 🚀 Key Features
 
-Suggest medical guidance based on severity
+### 1. Multi-Modal AI Triage
+- **Vision-Based Dermatological Analysis:** A two-pass AI pipeline. Pass 1 extracts raw clinical visual markers from uploaded images. Pass 2 cross-references these markers with user-reported MCQ answers to formulate a clinical conclusion (MILD/SERIOUS).
+- **Conversational Symptom Checker:** Multi-turn conversational AI constrained by system prompts to act as a triage nurse, not a diagnostic oracle.
 
-Allow users to book doctor appointments
+### 2. Offline-First Resilience
+- Network interruptions are seamlessly handled. If a user submits a triage request offline, it is serialized and stored in an optimistic queue.
+- Upon detecting the `window.online` event, the queue flushes, processes the AI request in the background, and alerts the user via a global toast notification.
 
-Store complete health history
+### 3. Role-Based Clinical Workspaces
+- **Patients:** View history, reschedule appointments, and view AI triage summaries.
+- **Doctors:** Access a real-time clinical workbench to review incoming patient queues and read AI-generated triage summaries before the patient enters the room.
+- **Hospital Admins:** Access a real-time analytics dashboard tracking facility load, doctor efficiency, case severity distribution, and patient feedback sentiment.
 
-Work in offline mode with automatic sync
+### 4. Localization (i18n)
+- Natively supports English, Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, and Malayalam.
+- AI system prompts are dynamically injected with the user's selected language to ensure responses match the UI language.
 
-Support multiple languages
+---
 
-Secure login with OTP and Guest Mode
+## 💻 Tech Stack
 
-Collect user feedback
+### Frontend
+- **Framework:** React 18 + TypeScript + Vite
+- **Styling:** Tailwind CSS (Custom Design System, Glassmorphism)
+- **State Management:** React Hooks + LocalStorage for persistence
+- **i18n:** `react-i18next`
 
+### Backend
+- **Runtime:** Node.js + Express.js
+- **Database:** MongoDB (Atlas) via Mongoose
+- **Authentication:** JWT (JSON Web Tokens) with OTP validation
+- **Security:** `helmet`, `express-rate-limit`, strict CORS configuration
 
-Why I Built This Project(SIH Project)
+### Infrastructure & AI
+- **LLM/VLM:** `@google/genai` (Gemini 2.0 Flash)
+- **SMS/Auth:** Twilio (Configurable)
 
-The idea behind Ad Astra was to create a basic AI-powered medical triage system that can be useful in areas where:
+---
 
-Doctors are not easily available
+## 📂 Project Structure
 
-Internet connectivity is unstable
+This repository is organized into a monorepo structure.
 
-People need quick health guidance before visiting a hospital
+*   `./` : The React frontend application. (See [FRONTEND_README.md](./FRONTEND_README.md) for UI architecture).
+*   `./server` : The Express.js backend. (See [server/README.md](./server/README.md) for API and AI pipeline details).
 
-This project also helped me learn how AI, backend security, databases, authentication, and frontend UI work together in a real production-style application.
+---
 
+## 🛠️ Quick Start Guide
 
-Tech Stack Used-->
+Detailed runbooks are available in the respective sub-READMEs, but here is the quick-start sequence:
 
-Frontend-
+### 1. Environment Setup
+You will need a MongoDB URI and a Google Gemini API Key.
 
-React with TypeScript
-
-Vite for fast development
-
-i18next for multi-language support
-
-LocalStorage for offline data
-
-Lazy loading for better performance
-
-Backend-
-
-Node.js with Express
-
-MongoDB with Mongoose
-
-JWT-based authentication
-
-OTP system (Twilio supported)
-
-API rate limiting and security headers
-
-AI Integration-
-
-Google Gemini API/ OpenAI API/
-
-Used for:
-
-Symptom analysis
-
-Skin disease detection
-
-Health-related responses
-
-How the App Works
-
-User logs in using:
-
-Guest mode OR
-
-Phone number + OTP
-
-User enters symptoms or uploads a skin image
-
-Backend sends a structured prompt to the AI
-
-AI returns:
-
-Possible condition
-
-Severity level
-
-Basic medical advice
-
-User can:
-
-View result
-
-Book doctor appointment
-
-Save the report
-
-If internet is not available:
-
-The request is saved locally
-
-It automatically syncs when internet returns
-
-
-Ad-Astra/
-│
-├── src/                     # Frontend source code
-│   ├── components/          # UI components
-│   ├── services/            # API & AI calls
-│   ├── types.ts             # TypeScript types
-│   ├── constants.ts         # App constants
-│   ├── i18n.ts              # Language config
-│   └── App.tsx              # Main app controller
-│
-├── server/                  # Backend code
-│   ├── src/
-│   │   ├── models/          # MongoDB models
-│   │   ├── index.ts         # Express server
-│   │   └── db.ts            # DB connection
-│
-├── cypress/                 # Testing
-└── README.md
-
-
-Authentication System --->
-
-Guest login for quick access
-
-OTP login using phone number
-
-JWT tokens for secure sessions
-
-Automatic logout when token expires
-
-Offline Support (Important Feature) --->
-
-Even if the internet is not available:
-
-Users can still submit symptom analysis
-
-The data is saved locally
-
-Once the internet is back, everything syncs automatically
-
-This makes the app usable in low-network areas, which is very important for real-world healthcare use.
-
-Security Features-->
-
-Secure HTTP headers using Helmet
-
-API rate limiting to prevent abuse
-
-JWT authentication
-
-All secrets stored in environment variables
-
-Input validation
-
-CORS protection
-
-
-How to Run This Project on Your System--->
-
-Clone the Repository-
-git clone https://github.com/Garvit-Sharmaa/Ad-Astra.git
-cd Ad-Astra
-
-Frontend Setup-
-npm install
-npm run dev
-
-Create a .env file in the root folder:
-VITE_API_BASE_URL=http://localhost:3005
-
-
-Backend Setup-
+**Backend (`server/.env`):**
+```ini
+PORT=3005
+MONGO_URI=mongodb+srv://...
+API_KEY=your_gemini_key
+JWT_SECRET=super_secure_random_string
+```
+
+### 2. Bootstrapping
+```bash
+# Start Backend
 cd server
 npm install
 npm run dev
 
-Create server/.env:
-MONGO_URI=your_mongodb_connection
-API_KEY=your_gemini_api_key
-JWT_SECRET=your_secret_key
+# Start Frontend (in a new terminal)
+cd ..
+npm install
+npm run dev
+```
 
-# Optional (for OTP)
-TWILIO_SID=
-TWILIO_AUTH=
-TWILIO_PHONE=
-
-
-Future Plans-->
-
-Support for multiple AI models (not just one)
-
-Live doctor consultation
-
-Hospital location with maps
-
-Health reminders
-
-Admin dashboard for doctors
-
-Wearable device data integration
-
-
-
-Developer
-
-Garvit Sharma
-GitHub: https://github.com/Garvit-Sharmaa
-
-
-
-
-
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
+---
+*Developed with a focus on non-destructive evolution, scalability, and robust error handling.*

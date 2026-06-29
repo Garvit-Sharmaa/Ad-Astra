@@ -1,136 +1,60 @@
-# Ad Astra - Backend API
+# Ad Astra — Backend Architecture & API
 
-This is the server-side application for **Ad Astra**. It acts as the bridge between the React frontend, the Database (MongoDB), and the AI models (Google Gemini).
+This directory contains the Express.js backend for the Ad Astra platform. It is engineered to be a stateless, secure, and robust orchestration layer between the client, the database, and the Google Gemini AI engine.
 
-We built this backend to keep our API keys secure and to handle business logic like session management and appointment bookings away from the client-side.
+## 🏗️ Core Architecture Concepts
 
-<<<<<<< HEAD
-## 🏗️ Architecture at a Glance
-=======
-##  Architecture at a Glance
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
+### 1. Security & Hardening First
+- **Strict CORS:** Configured via the `FRONTEND_URL` environment variable. Unrecognized origins are blocked outright.
+- **Rate Limiting:** Aggressive rate limiting on critical endpoints.
+  - `/api/auth/login-staff`: 10 requests / 15 minutes to prevent credential brute-forcing.
+  - `/api/ai/*`: 20 requests / 15 minutes to prevent API budget exhaustion and abuse.
+- **JWT Lifecycles:** Stateless sessions. The server refuses to boot in production if `JWT_SECRET` is undefined, preventing fallback to easily guessable development keys.
+- **Payload Constraints:** JSON payload limits strictly enforced (10MB for image data) to prevent memory exhaustion attacks.
 
-*   **Runtime:** Node.js with Express.
-*   **Database:** MongoDB Atlas (Cloud). We use `Mongoose` for schema modeling.
-*   **AI Engine:** Google Gemini (`gemini-2.5-flash`). The backend constructs the system prompts to ensure the AI behaves like a medical assistant, not a generic chatbot.
-*   **Auth:** JWT (JSON Web Tokens) for session handling.
-*   **SMS/OTP:**
-    *   **Production:** Twilio API (for real SMS).
-    *   **Development:** A built-in "Mock Mode" that logs the OTP to the console so you don't waste money on SMS credits during testing.
+### 2. The AI Triage Pipeline (Prompt Engineering)
+We do not blindly proxy user input to the LLM. We utilize a multi-step orchestration process to ensure clinical safety and determinism.
 
----
+**Dermatological Vision Pipeline:**
+To prevent the model from jumping to conclusions, we force a two-pass logical flow:
+1.  **Pass 1 (Objective Observation):** `POST /api/ai/describe-skin-image`
+    - **Prompt:** "Act as a clinical dermatologist. Closely examine this image. Identify: 1. Primary lesions, 2. Secondary markers, 3. Distribution."
+    - **Output:** A purely objective clinical description.
+2.  **Pass 2 (Triage Synthesis):** `POST /api/ai/get-skin-conclusion`
+    - **Prompt:** Takes the output from Pass 1, combines it with structured MCQ answers, and forces the model to output strict JSON conforming to the `TriageResultData` schema.
 
-<<<<<<< HEAD
-## ⚡ Quick Start
-=======
-##  Quick Start
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
+**Symptom Chat Pipeline:**
+- Stateful on the client, stateless on the server. The client passes the conversational history.
+- The system prompt explicitly restricts the AI from providing definitive diagnoses and mandates concise, actionable triage guidance.
 
-### 1. Prerequisites
-You need **Node.js** installed. You also need a **MongoDB Atlas** URI (free tier works fine) and a **Google Gemini API Key**.
+### 3. Role-Based Access Control (RBAC)
+The `authMiddleware` validates JWTs and injects the `UserPayload` into the request.
+- **PATIENT:** Can only query and mutate their own data (enforced via `userPhone` matching).
+- **DOCTOR:** Scoped to view bookings and patient data routed to their specific `hospitalName` and `doctorName`.
+- **HOSPITAL:** Administrative view, scoped to aggregate data across their specific `hospitalName`.
 
-### 2. Install Dependencies
-Navigate to the `server` folder and install the packages:
+## 🛣️ Key API Routes
 
-```bash
-cd server
-npm install
-```
+### Authentication (`/api/auth`)
+- `POST /request-otp`: Initiates Twilio flow (falls back to mock mode in dev).
+- `POST /login-patient`: Validates OTP and provisions a `PATIENT` JWT.
+- `POST /login-staff`: Validates email/password for clinical staff. Rate-limited.
 
-### 3. Setup Environment Variables
-Create a file named `.env` inside the `server/` folder. Copy and paste this:
+### AI Orchestration (`/api/ai`)
+- `POST /describe-skin-image`: Pass 1 of the vision pipeline.
+- `POST /get-skin-conclusion`: Pass 2 of the vision pipeline.
+- `POST /chat`: Multi-turn conversational triage.
 
-```ini
-PORT=3002
-MONGO_URI=your_mongodb_connection_string_here
-API_KEY=your_google_gemini_api_key_here
-JWT_SECRET=any_random_secret_string
+### Clinical Data (`/api/bookings`, `/api/feedback`)
+- `GET /bookings`: Dynamically scoped based on JWT role.
+- `POST /bookings`: Creates an appointment, mapping the AI triage summary to the clinical record.
+- `PATCH /bookings/:token/reschedule`: Reschedules an appointment. Validates ownership and current status (cannot reschedule CANCELLED/COMPLETED).
 
-# Optional: Only needed if you want REAL SMS.
-# If you leave these blank, the app defaults to "Mock Mode" (logs OTP to console).
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_VERIFY_SERVICE_SID=
-```
+## 🚀 Running in Production
 
-### 4. Run it
-```bash
-npm run dev
-```
-<<<<<<< HEAD
-The server will start on `http://localhost:3002`.
+To run this backend in a production environment (e.g., Render, Railway, AWS):
 
----
-
-## 🧠 How the AI Logic Works
-=======
-The server will start on `http://localhost:3005`.
-
----
-
-##  How the AI Logic Works
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
-
-We don't just pass the user's message to Gemini. We wrap it in a **System Instruction**.
-
-1.  **Skin Analysis:**
-    *   **Step 1:** The user uploads an image. We send it to Gemini with a prompt to "Describe this image clinically."
-    *   **Step 2:** We take that description and feed it back into Gemini with the user's MCQ answers to ask for a "Conclusion" (Mild vs Serious).
-    *   *Why two steps?* It prevents the AI from hallucinating a diagnosis without first grounding itself in what it actually "sees."
-
-2.  **Symptom Chat:**
-    *   We inject a persona: "You are a compassionate health assistant... do not provide a definitive diagnosis."
-    *   We force the output to be JSON so the frontend can render specific UI elements (like follow-up buttons or triage cards).
-
----
-
-<<<<<<< HEAD
-## 🛠️ API Routes
-=======
-##  API Routes
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
-
-### Auth
-*   `POST /api/auth/send-otp`: Takes a phone number. If Twilio keys are missing, it generates a random 6-digit code and logs it to the terminal.
-*   `POST /api/auth/verify-otp`: Exchanges that code for a JWT.
-*   `POST /api/auth/guest`: Generates a temporary guest token for quick testing.
-
-### AI
-*   `POST /api/ai/describe-skin-image`: Step 1 of the vision pipeline.
-*   `POST /api/ai/get-skin-conclusion`: Step 2 of the vision pipeline.
-*   `POST /api/ai/chat`: General symptom checker.
-
-### Core
-*   `GET /api/hospitals`: Fetches list of hospitals (auto-seeded from `db.json` if the DB is empty).
-*   `POST /api/bookings`: Saves an appointment.
-
----
-
-<<<<<<< HEAD
-## 🐛 Common Issues & Fixes
-=======
-## Common Issues & Fixes
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
-
-**1. "MongoNetworkError" or "ReplicaSetNoPrimary"**
-*   **What it means:** Your computer's IP address isn't allowed to talk to MongoDB Atlas.
-*   **Fix:** Go to Atlas Dashboard -> Network Access -> Add IP Address -> **"Allow Access from Anywhere"** (for dev) or "Add Current IP".
-
-**2. "429 Too Many Requests" from AI**
-*   **What it means:** You hit the free quota limit for the Gemini API (usually 15 requests/minute).
-*   **Fix:** Wait a minute. The backend sends a specific error message to the frontend so the user knows to wait.
-
-**3. "Payload Too Large"**
-*   **What it means:** The image you tried to upload is huge.
-*   **Fix:** The server is configured to accept up to 10MB (`express.json({ limit: '10mb' })`). If you need more, change that line in `index.ts`.
-
----
-
-<<<<<<< HEAD
-## 👨‍💻 Developer Notes
-=======
-##  Developer Notes
->>>>>>> 390da379d01e60efa48708bd34a20a94f94adcab
-
-*   **Seeding Data:** If you connect to a fresh database, the server will automatically insert dummy hospitals from `db.json` on the first run. You don't need to manually import anything.
-*   **Offline Queue:** There's a special endpoint `/api/ai/analyze-skin` designed for the "Offline Mode." It combines the two-step AI process into one call so it can be processed in the background when the user reconnects.
+1. Set `NODE_ENV=production`.
+2. Ensure `JWT_SECRET` is set to a secure, high-entropy string (the server will crash on boot if missing).
+3. Set `FRONTEND_URL` to your exact frontend domain (e.g., `https://ad-astra.vercel.app`) to lock down CORS.
+4. Execute via `npm start` (or compile via `tsc` and run the output `dist/index.js`).
