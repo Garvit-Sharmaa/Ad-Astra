@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, UserRole } from '../types';
 import LoadingSpinner from './LoadingSpinner';
@@ -8,12 +8,12 @@ import { BACKEND_URL } from '../constants';
 interface LoginProps {
   onLoginSuccess: (data: { user: User, token: string }) => void;
   onBack: () => void;
-  onToggleTheme: () => void;
+
 }
 
 type LoginStep = 'role_select' | 'credentials' | 'otp_verify';
 
-const Login = ({ onLoginSuccess, onBack, onToggleTheme }: LoginProps) => {
+const Login = ({ onLoginSuccess, onBack }: LoginProps) => {
     const [step, setStep] = useState<LoginStep>('role_select');
     const [role, setRole] = useState<UserRole>('PATIENT');
     const [name, setName] = useState(''); // New state for Patient Name

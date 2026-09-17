@@ -1,5 +1,5 @@
 
-import React from 'react';
+
 import { TriageResultData, View } from '../types';
 import { useTranslation } from 'react-i18next';
 

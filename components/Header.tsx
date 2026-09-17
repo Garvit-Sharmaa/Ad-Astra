@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { View, User } from '../types';
 import { useTranslation } from 'react-i18next';
 

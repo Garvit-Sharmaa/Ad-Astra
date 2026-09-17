@@ -41,7 +41,7 @@ const SkinDetector = ({ onBack, onAnalysisComplete }: SkinDetectorProps) => {
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<ComponentStep>('upload');
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
   
   const [progress, setProgress] = useState(0);

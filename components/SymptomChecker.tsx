@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { handleSymptomChat } from '../services/geminiService';
 import { ChatMessage, TriageResultData, View } from '../types';
 import { useTranslation } from 'react-i18next';

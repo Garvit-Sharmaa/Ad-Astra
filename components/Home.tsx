@@ -5,10 +5,9 @@ import { useTranslation } from 'react-i18next';
 
 interface HomeProps {
   onNavigate: (view: View) => void;
-  onViewOfflineResult: () => void;
 }
 
-const Home = ({ onNavigate, onViewOfflineResult }: HomeProps) => {
+const Home = ({ onNavigate }: HomeProps) => {
     const [tip, setTip] = useState('');
     const [user, setUser] = useState<User | null>(null);
     const { t } = useTranslation();

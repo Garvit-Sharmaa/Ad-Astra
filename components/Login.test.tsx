@@ -1,6 +1,6 @@
 
 import '@testing-library/jest-dom/vitest';
-import React from 'react';
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, vi, expect } from 'vitest';
@@ -14,14 +14,13 @@ globalThis.fetch = vi.fn();
 describe('Login Component', () => {
   const handleLoginSuccess = vi.fn();
   const handleBack = vi.fn();
-  const handleToggleTheme = vi.fn();
+
 
   // Test Case 1: Initial Render
   it('renders the initial login form correctly', () => {
-    // Fix: Added missing onToggleTheme prop (Line 21)
     render(
       <I18nextProvider i18n={i18n}>
-        <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} onToggleTheme={handleToggleTheme} />
+        <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} />
       </I18nextProvider>
     );
 
@@ -40,10 +39,9 @@ describe('Login Component', () => {
   // Test Case 2: User Interaction with Invalid Input
   it('shows an error if the phone number is invalid on submission', async () => {
     const user = userEvent.setup();
-    // Fix: Added missing onToggleTheme prop (Line 43)
     render(
         <I18nextProvider i18n={i18n}>
-            <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} onToggleTheme={handleToggleTheme} />
+            <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} />
         </I18nextProvider>
     );
 
@@ -68,10 +66,9 @@ describe('Login Component', () => {
   it('proceeds to OTP step when valid details are provided', async () => {
     const user = userEvent.setup();
     
-    // Fix: Added missing onToggleTheme prop (Line 73)
     render(
         <I18nextProvider i18n={i18n}>
-            <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} onToggleTheme={handleToggleTheme} />
+            <Login onLoginSuccess={handleLoginSuccess} onBack={handleBack} />
         </I18nextProvider>
     );
 

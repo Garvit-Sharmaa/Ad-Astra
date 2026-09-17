@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, MouseEvent } from 'react';
+import { useState, useRef, useEffect, MouseEvent } from 'react';
 import { LANGUAGES } from '../constants';
 import { useTranslation } from 'react-i18next';
 

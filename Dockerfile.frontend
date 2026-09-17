@@ -1,0 +1,30 @@
+# Stage 1: Build the React application
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm config set fetch-retry-maxtimeout 600000 -g && npm install --network-timeout=1000000
+
+# Copy the rest of the application
+COPY . .
+
+# Pass in any build-time variables (like backend URL)
+ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
+# Build the app
+RUN npm run build
+
+# Stage 2: Serve the built application with Nginx
+FROM nginx:alpine
+
+# Copy the built artifacts from the builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Run nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]

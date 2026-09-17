@@ -3,7 +3,7 @@ import { View, TriageResultData, BookingDetails, User } from './types';
 import { useTranslation } from 'react-i18next';
 import { BACKEND_URL } from './constants';
 import { processAnalysisQueue } from './services/geminiService';
-import { CapacitorUpdater } from '@capgo/capacitor-updater';
+
 
 
 const LanguageSelector = lazy(() => import('./components/LanguageSelector'));
@@ -74,11 +74,11 @@ const App = () => {
   const [offlineBannerIndex, setOfflineBannerIndex] = useState(0);
 
   useEffect(() => {
-    try {
-        CapacitorUpdater.notifyAppReady();
-    } catch (e) {
-        console.warn('Capacitor Updater not available');
-    }
+    // Dynamically import CapacitorUpdater only when running as a native app.
+    // In a browser/web build this import fails silently — no crash.
+    import('@capgo/capacitor-updater')
+      .then(({ CapacitorUpdater }) => CapacitorUpdater.notifyAppReady())
+      .catch(() => console.warn('Capacitor Updater not available (web build)'));
   }, []);
 
   // Strict Navigation Flow: Language Page is Initial Entry
@@ -206,9 +206,9 @@ const App = () => {
       case View.Language:
         return <LanguageSelector onSelect={handleLanguageSelect} />;
       case View.Login:
-        return <Login onLoginSuccess={handleLoginSuccess} onBack={() => navigateTo(View.Language)} onToggleTheme={handleToggleTheme} />;
+        return <Login onLoginSuccess={handleLoginSuccess} onBack={() => navigateTo(View.Language)} />;
       case View.Home:
-        return <Home onNavigate={navigateTo} onViewOfflineResult={handleViewOfflineResult} />;
+        return <Home onNavigate={navigateTo} />;
       case View.Skin:
         return <SkinDetector onBack={() => navigateTo(View.Home)} onAnalysisComplete={(res) => { setSuggestedSpecialty(null); setResult(res); navigateTo(View.Result); }} />;
       case View.Symptoms:

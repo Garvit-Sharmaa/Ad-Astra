@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { BookingDetails } from '../types';
 import { useTranslation } from 'react-i18next';
 import { BACKEND_URL } from '../constants'; 

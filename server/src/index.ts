@@ -72,7 +72,7 @@ const seedPresentationData = async () => {
         { name: 'Delhi Hospital Admin', role: 'HOSPITAL', hospitalName: 'District General Hospital, Delhi' },
         { upsert: true }
     );
-    
+
     // Gurgaon Hospital Accounts
     await User.findOneAndUpdate(
         { phone: '8888777711' },
@@ -100,7 +100,7 @@ const startServer = async () => {
         await seedPresentationData();
 
         const app = express();
-        
+
         app.use(helmet() as any);
 
         // --- CORS — Environment-Aware Origin Control ---
@@ -116,9 +116,9 @@ const startServer = async () => {
         }
         app.use(cors({
             origin: (origin, callback) => {
-                // Allow server-to-server requests (no Origin header) and mobile app requests
+                // Allow server-to-server requests (no Origin header), mobile app requests, and local network requests
                 if (!origin) return callback(null, true);
-                if (allowedOrigins.includes(origin)) return callback(null, true);
+                if (allowedOrigins.includes(origin) || origin.startsWith('http://192.168.')) return callback(null, true);
                 console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
                 callback(new Error(`CORS policy does not allow origin: ${origin}`));
             },
@@ -129,14 +129,14 @@ const startServer = async () => {
 
         // --- AUTH MIDDLEWARE ---
         const authMiddleware = (req: any, res: any, next: NextFunction) => {
-          const authHeader = req.headers.authorization;
-          if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized: Missing Token' });
-          try {
-            req.user = jwt.verify(authHeader.split(' ')[1], JWT_SECRET) as UserPayload;
-            next();
-          } catch (error) {
-            return res.status(401).json({ message: 'Unauthorized: Invalid Token' });
-          }
+            const authHeader = req.headers.authorization;
+            if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ message: 'Unauthorized: Missing Token' });
+            try {
+                req.user = jwt.verify(authHeader.split(' ')[1], JWT_SECRET) as UserPayload;
+                next();
+            } catch (error) {
+                return res.status(401).json({ message: 'Unauthorized: Invalid Token' });
+            }
         };
 
         // --- RATE LIMITERS ---
@@ -174,13 +174,13 @@ const startServer = async () => {
                     verified = check.status === 'approved';
                 }
                 if (!verified) return res.status(401).json({ message: "Invalid OTP code." });
-                
+
                 const user = await User.findOneAndUpdate(
-                    { phone }, 
-                    { name: name || 'Patient ' + phone.slice(-4), role: 'PATIENT', lastLogin: new Date(), isOnline: true }, 
+                    { phone },
+                    { name: name || 'Patient ' + phone.slice(-4), role: 'PATIENT', lastLogin: new Date(), isOnline: true },
                     { upsert: true, new: true }
                 );
-                
+
                 const token = jwt.sign({ phone: user.phone, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
                 res.json({ token, user: { name: user.name, phone: user.phone, role: user.role } });
             } catch (err) {
@@ -201,8 +201,8 @@ const startServer = async () => {
             const creds = credentialsMap[email];
             if (creds && creds.pass === password) {
                 const user = await User.findOneAndUpdate(
-                    { phone: creds.phone }, 
-                    { lastLogin: new Date(), isOnline: true }, 
+                    { phone: creds.phone },
+                    { lastLogin: new Date(), isOnline: true },
                     { new: true }
                 );
                 if (!user) return res.status(404).json({ message: "Account setup error." });
@@ -409,8 +409,8 @@ const startServer = async () => {
             const { status, notes } = req.body;
             try {
                 const booking = await Booking.findOneAndUpdate(
-                    { token }, 
-                    { status, notes }, 
+                    { token },
+                    { status, notes },
                     { new: true }
                 );
                 if (!booking) return res.status(404).json({ message: "Booking not found." });
@@ -548,7 +548,7 @@ const startServer = async () => {
             }
         });
 
-        const PORT = process.env.PORT || 3005;
+        const PORT = process.env.PORT || 3011;
         app.listen(PORT, () => console.log(`ðŸš€ Ad Astra Sync Server LIVE on ${PORT}`));
     } catch (error) { console.error(error); }
 };

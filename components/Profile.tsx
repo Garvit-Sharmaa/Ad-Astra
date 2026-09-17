@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { User } from '../types';
 import { useTranslation } from 'react-i18next';
 import { updateUserProfile } from '../services/geminiService';
